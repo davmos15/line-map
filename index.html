@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Route Visualizer - GPS Track to Print</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="app-container">
+        <header>
+            <h1>Route Visualizer</h1>
+            <p>Transform your GPS tracks into beautiful line art</p>
+        </header>
+
+        <main>
+            <div class="controls-panel">
+                <section class="file-upload-section">
+                    <h2>Upload GPS File</h2>
+                    <div class="file-upload-area" id="fileUploadArea">
+                        <input type="file" id="fileInput" accept=".gpx,.tcx,.fit" hidden>
+                        <div class="upload-prompt">
+                            <svg class="upload-icon" viewBox="0 0 24 24" width="48" height="48">
+                                <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+                            </svg>
+                            <p>Drag & drop your GPS file here or click to browse</p>
+                            <p class="file-types">Supported: GPX, TCX, FIT</p>
+                        </div>
+                    </div>
+                    <div id="uploadFeedback" class="upload-feedback"></div>
+                </section>
+
+                <section class="print-size-section">
+                    <h2>Print Size</h2>
+                    <select id="printSize" class="print-size-select">
+                        <option value="a5">A5 (148 × 210 mm)</option>
+                        <option value="a4" selected>A4 (210 × 297 mm)</option>
+                        <option value="a3">A3 (297 × 420 mm)</option>
+                        <option value="a2">A2 (420 × 594 mm)</option>
+                        <option value="a1">A1 (594 × 841 mm)</option>
+                        <option value="a0">A0 (841 × 1189 mm)</option>
+                    </select>
+                </section>
+
+                <section class="color-section">
+                    <h2>Colors</h2>
+                    <div class="color-controls">
+                        <div class="color-control">
+                            <label for="routeColor">Route Line</label>
+                            <input type="color" id="routeColor" value="#000000">
+                        </div>
+                        <div class="color-control">
+                            <label for="backgroundColor">Background</label>
+                            <input type="color" id="backgroundColor" value="#FFFFFF">
+                        </div>
+                    </div>
+                    <div class="color-presets">
+                        <button class="preset-btn" data-route="#000000" data-bg="#FFFFFF">Black on White</button>
+                        <button class="preset-btn" data-route="#FFFFFF" data-bg="#000000">White on Black</button>
+                        <button class="preset-btn" data-route="#FF6B6B" data-bg="#F7F7F7">Red on Light</button>
+                        <button class="preset-btn" data-route="#4ECDC4" data-bg="#1A535C">Teal on Dark</button>
+                    </div>
+                </section>
+
+                <section class="text-section">
+                    <h2>Text Elements</h2>
+                    <div class="text-controls">
+                        <button id="addTextBtn" class="add-text-btn">+ Add Text</button>
+                        <div id="textElements" class="text-elements-list"></div>
+                    </div>
+                </section>
+
+                <section class="export-section">
+                    <h2>Export</h2>
+                    <button id="exportBtn" class="export-btn" disabled>Download Image</button>
+                    <select id="exportFormat" class="export-format">
+                        <option value="png">PNG</option>
+                        <option value="svg">SVG</option>
+                        <option value="pdf">PDF</option>
+                    </select>
+                </section>
+            </div>
+
+            <div class="preview-panel">
+                <div class="canvas-container" id="canvasContainer">
+                    <canvas id="routeCanvas"></canvas>
+                    <div id="textOverlay" class="text-overlay"></div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="js/fit-parser.js"></script>
+    <script src="js/gps-parser.js"></script>
+    <script src="js/route-renderer.js"></script>
+    <script src="js/text-manager.js"></script>
+    <script src="js/export-manager.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>

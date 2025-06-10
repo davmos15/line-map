@@ -1,0 +1,352 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    background-color: #f5f5f5;
+    color: #333;
+    line-height: 1.6;
+}
+
+.app-container {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+header {
+    background-color: #fff;
+    padding: 1.5rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    text-align: center;
+}
+
+header h1 {
+    font-size: 2rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+header p {
+    color: #666;
+}
+
+main {
+    flex: 1;
+    display: flex;
+    gap: 2rem;
+    padding: 2rem;
+    max-width: 1600px;
+    margin: 0 auto;
+    width: 100%;
+}
+
+.controls-panel {
+    flex: 0 0 320px;
+    background: #fff;
+    border-radius: 8px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    overflow-y: auto;
+    max-height: calc(100vh - 180px);
+}
+
+.preview-panel {
+    flex: 1;
+    background: #fff;
+    border-radius: 8px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+section {
+    margin-bottom: 2rem;
+}
+
+section:last-child {
+    margin-bottom: 0;
+}
+
+h2 {
+    font-size: 1.2rem;
+    margin-bottom: 1rem;
+    color: #333;
+}
+
+.file-upload-area {
+    border: 2px dashed #ddd;
+    border-radius: 8px;
+    padding: 2rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.file-upload-area:hover {
+    border-color: #4CAF50;
+    background-color: #f9f9f9;
+}
+
+.file-upload-area.drag-over {
+    border-color: #4CAF50;
+    background-color: #e8f5e9;
+}
+
+.upload-icon {
+    fill: #999;
+    margin-bottom: 1rem;
+}
+
+.upload-prompt p {
+    margin: 0.5rem 0;
+}
+
+.file-types {
+    font-size: 0.875rem;
+    color: #666;
+}
+
+.upload-feedback {
+    margin-top: 1rem;
+    padding: 0.75rem;
+    border-radius: 4px;
+    font-size: 0.875rem;
+    display: none;
+}
+
+.upload-feedback.success {
+    background-color: #e8f5e9;
+    color: #2e7d32;
+    display: block;
+}
+
+.upload-feedback.error {
+    background-color: #ffebee;
+    color: #c62828;
+    display: block;
+}
+
+.print-size-select {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 1rem;
+    background-color: #fff;
+}
+
+.color-controls {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.color-control {
+    flex: 1;
+}
+
+.color-control label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-size: 0.875rem;
+    color: #666;
+}
+
+.color-control input[type="color"] {
+    width: 100%;
+    height: 40px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.color-presets {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+}
+
+.preset-btn {
+    padding: 0.5rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background: #fff;
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.preset-btn:hover {
+    background-color: #f5f5f5;
+    border-color: #999;
+}
+
+.add-text-btn {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #4CAF50;
+    border-radius: 4px;
+    background: #4CAF50;
+    color: white;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.add-text-btn:hover {
+    background: #45a049;
+}
+
+.text-elements-list {
+    margin-top: 1rem;
+}
+
+.text-element-item {
+    background: #f5f5f5;
+    padding: 1rem;
+    border-radius: 4px;
+    margin-bottom: 0.75rem;
+}
+
+.text-element-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.text-input {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 0.875rem;
+}
+
+.text-style-controls {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+}
+
+.text-style-controls select,
+.text-style-controls input {
+    padding: 0.5rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 0.875rem;
+}
+
+.remove-text-btn {
+    padding: 0.5rem;
+    border: 1px solid #e74c3c;
+    border-radius: 4px;
+    background: #e74c3c;
+    color: white;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.remove-text-btn:hover {
+    background: #c0392b;
+}
+
+.export-btn {
+    width: 70%;
+    padding: 0.75rem;
+    border: none;
+    border-radius: 4px;
+    background: #2196F3;
+    color: white;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.export-btn:hover:not(:disabled) {
+    background: #1976D2;
+}
+
+.export-btn:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+}
+
+.export-format {
+    width: 28%;
+    padding: 0.75rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 1rem;
+}
+
+.canvas-container {
+    position: relative;
+    background: #fff;
+    border: 1px solid #ddd;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+#routeCanvas {
+    display: block;
+}
+
+.text-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+.draggable-text {
+    position: absolute;
+    cursor: move;
+    user-select: none;
+    pointer-events: all;
+    padding: 4px;
+    transition: opacity 0.2s;
+}
+
+.draggable-text:hover {
+    opacity: 0.8;
+}
+
+.draggable-text.dragging {
+    opacity: 0.6;
+    cursor: grabbing;
+}
+
+@media (max-width: 768px) {
+    main {
+        flex-direction: column;
+        padding: 1rem;
+    }
+
+    .controls-panel {
+        flex: none;
+        width: 100%;
+        max-height: none;
+        margin-bottom: 1rem;
+    }
+
+    .preview-panel {
+        min-height: 400px;
+    }
+
+    .color-presets {
+        grid-template-columns: 1fr;
+    }
+}
+
+.export-section {
+    display: flex;
+    gap: 0.5rem;
+}
