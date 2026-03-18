@@ -3,14 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Route Visualizer - GPS Track to Print</title>
+    <title>LineArt Maps — Turn Your GPS Routes Into Wall Art</title>
+    <meta name="description" content="Transform your runs, rides, and hikes into beautiful minimalist line art. Upload GPX, TCX, or FIT files and export print-ready PNG, SVG, or PDF.">
+    <meta property="og:title" content="LineArt Maps — GPS Routes as Wall Art">
+    <meta property="og:description" content="Turn your runs, rides, and hikes into beautiful wall art. Works offline, no account needed.">
+    <meta property="og:type" content="website">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path d='M15 75 Q30 25 50 55 Q70 85 85 30' fill='none' stroke='%23333' stroke-width='6' stroke-linecap='round'/></svg>">
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <div class="app-container">
         <header>
-            <h1>Route Visualizer</h1>
-            <p>Transform your GPS tracks into beautiful line art</p>
+            <h1>LineArt Maps</h1>
+            <p>Turn your runs, rides, and hikes into beautiful wall art</p>
         </header>
 
         <main>
@@ -21,7 +26,7 @@
                         <input type="file" id="fileInput" accept=".gpx,.tcx,.fit" hidden>
                         <div class="upload-prompt">
                             <svg class="upload-icon" viewBox="0 0 24 24" width="48" height="48">
-                                <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+                                <path d="M9 16h6v-6h4l-7-7-7 7h4v6zm-4 2h14v2H5v-2z" fill="currentColor"/>
                             </svg>
                             <p>Drag & drop your GPS file here or click to browse</p>
                             <p class="file-types">Supported: GPX, TCX, FIT</p>
@@ -31,15 +36,18 @@
                 </section>
 
                 <section class="print-size-section">
-                    <h2>Print Size</h2>
-                    <select id="printSize" class="print-size-select">
-                        <option value="a5">A5 (148 × 210 mm)</option>
-                        <option value="a4" selected>A4 (210 × 297 mm)</option>
-                        <option value="a3">A3 (297 × 420 mm)</option>
-                        <option value="a2">A2 (420 × 594 mm)</option>
-                        <option value="a1">A1 (594 × 841 mm)</option>
-                        <option value="a0">A0 (841 × 1189 mm)</option>
-                    </select>
+                    <h2>Page Setup</h2>
+                    <div class="page-setup-row">
+                        <select id="printSize" class="print-size-select">
+                            <option value="a5">A5 (148 x 210 mm)</option>
+                            <option value="a4" selected>A4 (210 x 297 mm)</option>
+                            <option value="a3">A3 (297 x 420 mm)</option>
+                            <option value="a2">A2 (420 x 594 mm)</option>
+                            <option value="a1">A1 (594 x 841 mm)</option>
+                            <option value="a0">A0 (841 x 1189 mm)</option>
+                        </select>
+                        <button id="orientationBtn" class="orientation-btn" title="Switch to landscape">Portrait</button>
+                    </div>
                 </section>
 
                 <section class="color-section">
@@ -55,10 +63,62 @@
                         </div>
                     </div>
                     <div class="color-presets">
-                        <button class="preset-btn" data-route="#000000" data-bg="#FFFFFF">Black on White</button>
-                        <button class="preset-btn" data-route="#FFFFFF" data-bg="#000000">White on Black</button>
-                        <button class="preset-btn" data-route="#FF6B6B" data-bg="#F7F7F7">Red on Light</button>
-                        <button class="preset-btn" data-route="#4ECDC4" data-bg="#1A535C">Teal on Dark</button>
+                        <button class="preset-btn" data-route="#000000" data-bg="#FFFFFF" title="Black on White">
+                            <span class="preset-swatch" style="background:#FFFFFF;color:#000000">A</span>
+                        </button>
+                        <button class="preset-btn" data-route="#FFFFFF" data-bg="#000000" title="White on Black">
+                            <span class="preset-swatch" style="background:#000000;color:#FFFFFF">A</span>
+                        </button>
+                        <button class="preset-btn" data-route="#1B2A4A" data-bg="#F5F0E8" title="Navy on Cream">
+                            <span class="preset-swatch" style="background:#F5F0E8;color:#1B2A4A">A</span>
+                        </button>
+                        <button class="preset-btn" data-route="#C9A84C" data-bg="#1A1A1A" title="Gold on Black">
+                            <span class="preset-swatch" style="background:#1A1A1A;color:#C9A84C">A</span>
+                        </button>
+                        <button class="preset-btn" data-route="#2D5016" data-bg="#FFFFFF" title="Forest Green on White">
+                            <span class="preset-swatch" style="background:#FFFFFF;color:#2D5016">A</span>
+                        </button>
+                        <button class="preset-btn" data-route="#E8715A" data-bg="#2C2C2C" title="Coral on Dark Gray">
+                            <span class="preset-swatch" style="background:#2C2C2C;color:#E8715A">A</span>
+                        </button>
+                        <button class="preset-btn" data-route="#FF6B6B" data-bg="#F7F7F7" title="Red on Light">
+                            <span class="preset-swatch" style="background:#F7F7F7;color:#FF6B6B">A</span>
+                        </button>
+                        <button class="preset-btn" data-route="#4ECDC4" data-bg="#1A535C" title="Teal on Dark">
+                            <span class="preset-swatch" style="background:#1A535C;color:#4ECDC4">A</span>
+                        </button>
+                        <button class="preset-btn" data-route="#8B5E3C" data-bg="#FDF6EC" title="Espresso on Linen">
+                            <span class="preset-swatch" style="background:#FDF6EC;color:#8B5E3C">A</span>
+                        </button>
+                        <button class="preset-btn" data-route="#E6E6E6" data-bg="#1C1C1C" title="Silver on Charcoal">
+                            <span class="preset-swatch" style="background:#1C1C1C;color:#E6E6E6">A</span>
+                        </button>
+                    </div>
+                </section>
+
+                <section class="line-section">
+                    <h2>Line Style</h2>
+                    <div class="line-control">
+                        <label for="lineWidth">Width</label>
+                        <div class="slider-row">
+                            <input type="range" id="lineWidth" min="0.5" max="6" step="0.5" value="2">
+                            <span id="lineWidthValue">2px</span>
+                        </div>
+                    </div>
+                    <div class="line-control">
+                        <label for="lineStyle">Style</label>
+                        <select id="lineStyle">
+                            <option value="solid">Solid</option>
+                            <option value="dashed">Dashed</option>
+                            <option value="dotted">Dotted</option>
+                        </select>
+                    </div>
+                    <div class="line-control">
+                        <label for="smoothing">Smoothing</label>
+                        <div class="slider-row">
+                            <input type="range" id="smoothing" min="0" max="1" step="0.1" value="0">
+                            <span id="smoothingValue">Off</span>
+                        </div>
                     </div>
                 </section>
 
@@ -72,12 +132,15 @@
 
                 <section class="export-section">
                     <h2>Export</h2>
-                    <button id="exportBtn" class="export-btn" disabled>Download Image</button>
-                    <select id="exportFormat" class="export-format">
-                        <option value="png">PNG</option>
-                        <option value="svg">SVG</option>
-                        <option value="pdf">PDF</option>
-                    </select>
+                    <div class="export-row">
+                        <button id="exportBtn" class="export-btn" disabled>Download</button>
+                        <select id="exportFormat" class="export-format">
+                            <option value="png">PNG</option>
+                            <option value="svg">SVG</option>
+                            <option value="pdf">PDF</option>
+                        </select>
+                    </div>
+                    <button id="resetBtn" class="reset-btn">Reset</button>
                 </section>
             </div>
 
@@ -85,12 +148,16 @@
                 <div class="canvas-container" id="canvasContainer">
                     <canvas id="routeCanvas"></canvas>
                     <div id="textOverlay" class="text-overlay"></div>
+                    <div id="loadingOverlay" class="loading-overlay" style="display:none">
+                        <div class="spinner"></div>
+                        <p>Processing GPS file...</p>
+                    </div>
                 </div>
             </div>
         </main>
     </div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="lib/jspdf.umd.min.js"></script>
     <script src="js/fit-parser.js"></script>
     <script src="js/gps-parser.js"></script>
     <script src="js/route-renderer.js"></script>

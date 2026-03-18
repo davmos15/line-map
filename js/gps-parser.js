@@ -1,46 +1,35 @@
 class GPSParser {
     static async parseFile(file) {
         const fileType = file.name.split('.').pop().toLowerCase();
-        const text = await file.text();
-        
-        switch(fileType) {
+
+        switch (fileType) {
             case 'gpx':
-                return this.parseGPX(text);
+                return this.parseGPX(await file.text());
             case 'tcx':
-                return this.parseTCX(text);
+                return this.parseTCX(await file.text());
             case 'fit':
                 return this.parseFIT(file);
             default:
-                throw new Error('Unsupported file format');
+                throw new Error('Unsupported file format. Please use GPX, TCX, or FIT.');
         }
     }
 
     static parseGPX(xmlText) {
         const parser = new DOMParser();
         const xmlDoc = parser.parseFromString(xmlText, 'text/xml');
-        
-        const parseError = xmlDoc.querySelector('parsererror');
-        if (parseError) {
+
+        if (xmlDoc.querySelector('parsererror')) {
             throw new Error('Invalid GPX file format');
         }
 
         const coordinates = [];
-        const metadata = {
-            name: '',
-            time: null,
-            distance: 0,
-            duration: null
-        };
+        const metadata = { name: '', time: null, distance: 0, duration: null };
 
         const nameElement = xmlDoc.querySelector('name');
-        if (nameElement) {
-            metadata.name = nameElement.textContent;
-        }
+        if (nameElement) metadata.name = nameElement.textContent;
 
         const timeElement = xmlDoc.querySelector('time');
-        if (timeElement) {
-            metadata.time = new Date(timeElement.textContent);
-        }
+        if (timeElement) metadata.time = new Date(timeElement.textContent);
 
         const trackpoints = xmlDoc.querySelectorAll('trkpt');
         const waypoints = xmlDoc.querySelectorAll('wpt');
@@ -53,7 +42,7 @@ class GPSParser {
         points.forEach(point => {
             const lat = parseFloat(point.getAttribute('lat'));
             const lon = parseFloat(point.getAttribute('lon'));
-            
+
             if (!isNaN(lat) && !isNaN(lon)) {
                 coordinates.push({ lat, lon });
 
@@ -72,7 +61,7 @@ class GPSParser {
         });
 
         if (firstTime && lastTime) {
-            metadata.duration = (lastTime - firstTime) / 1000; // seconds
+            metadata.duration = (lastTime - firstTime) / 1000;
         }
 
         return { coordinates, metadata };
@@ -81,19 +70,13 @@ class GPSParser {
     static parseTCX(xmlText) {
         const parser = new DOMParser();
         const xmlDoc = parser.parseFromString(xmlText, 'text/xml');
-        
-        const parseError = xmlDoc.querySelector('parsererror');
-        if (parseError) {
+
+        if (xmlDoc.querySelector('parsererror')) {
             throw new Error('Invalid TCX file format');
         }
 
         const coordinates = [];
-        const metadata = {
-            name: '',
-            time: null,
-            distance: 0,
-            duration: null
-        };
+        const metadata = { name: '', time: null, distance: 0, duration: null };
 
         const activityElement = xmlDoc.querySelector('Activity');
         if (activityElement) {
@@ -102,9 +85,7 @@ class GPSParser {
         }
 
         const idElement = xmlDoc.querySelector('Id');
-        if (idElement) {
-            metadata.time = new Date(idElement.textContent);
-        }
+        if (idElement) metadata.time = new Date(idElement.textContent);
 
         const trackpoints = xmlDoc.querySelectorAll('Trackpoint');
         let prevPoint = null;
@@ -114,11 +95,11 @@ class GPSParser {
         trackpoints.forEach(point => {
             const latElem = point.querySelector('LatitudeDegrees');
             const lonElem = point.querySelector('LongitudeDegrees');
-            
+
             if (latElem && lonElem) {
                 const lat = parseFloat(latElem.textContent);
                 const lon = parseFloat(lonElem.textContent);
-                
+
                 if (!isNaN(lat) && !isNaN(lon)) {
                     coordinates.push({ lat, lon });
 
@@ -138,9 +119,7 @@ class GPSParser {
         });
 
         const distanceElem = xmlDoc.querySelector('DistanceMeters');
-        if (distanceElem) {
-            metadata.distance = parseFloat(distanceElem.textContent);
-        }
+        if (distanceElem) metadata.distance = parseFloat(distanceElem.textContent);
 
         const totalTimeElem = xmlDoc.querySelector('TotalTimeSeconds');
         if (totalTimeElem) {
@@ -154,17 +133,16 @@ class GPSParser {
 
     static async parseFIT(file) {
         if (typeof FitParser === 'undefined') {
-            throw new Error('FIT parser library not loaded');
+            throw new Error('FIT parser not available');
         }
 
         const arrayBuffer = await file.arrayBuffer();
         const fitParser = new FitParser();
-        
         const { records, sessions } = fitParser.parse(arrayBuffer);
-        
+
         const coordinates = [];
         const metadata = {
-            name: file.name.replace('.fit', ''),
+            name: file.name.replace(/\.fit$/i, ''),
             time: null,
             distance: 0,
             duration: null
@@ -172,23 +150,16 @@ class GPSParser {
 
         if (sessions && sessions.length > 0) {
             const session = sessions[0];
-            if (session.start_time) {
-                metadata.time = new Date(session.start_time);
-            }
-            if (session.total_distance) {
-                metadata.distance = session.total_distance;
-            }
-            if (session.total_elapsed_time) {
-                metadata.duration = session.total_elapsed_time;
-            }
+            if (session.start_time) metadata.time = session.start_time;
+            if (session.total_distance) metadata.distance = session.total_distance;
+            if (session.total_elapsed_time) metadata.duration = session.total_elapsed_time;
         }
 
         let prevPoint = null;
         records.forEach(record => {
-            if (record.position_lat && record.position_long) {
+            if (record.position_lat != null && record.position_long != null) {
                 const lat = record.position_lat * (180 / Math.pow(2, 31));
                 const lon = record.position_long * (180 / Math.pow(2, 31));
-                
                 coordinates.push({ lat, lon });
 
                 if (!metadata.distance && prevPoint) {
@@ -202,17 +173,14 @@ class GPSParser {
     }
 
     static calculateDistance(point1, point2) {
-        const R = 6371000; // Earth's radius in meters
+        const R = 6371000;
         const dLat = this.toRad(point2.lat - point1.lat);
         const dLon = this.toRad(point2.lon - point1.lon);
         const lat1 = this.toRad(point1.lat);
         const lat2 = this.toRad(point2.lat);
-
-        const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-                Math.sin(dLon/2) * Math.sin(dLon/2) * Math.cos(lat1) * Math.cos(lat2);
-        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-        
-        return R * c;
+        const a = Math.sin(dLat / 2) ** 2 +
+                  Math.sin(dLon / 2) ** 2 * Math.cos(lat1) * Math.cos(lat2);
+        return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     }
 
     static toRad(deg) {

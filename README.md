@@ -1,57 +1,73 @@
-# Route Visualizer Web App
+# LineArt Maps
 
-A web application that converts GPS activity files (GPX, TCX, FIT) into customizable line drawings suitable for printing.
+Turn your runs, rides, and hikes into beautiful wall art.
 
-## Features
+## Quick Start
 
-- **File Upload**: Support for GPX, TCX, and FIT format GPS files
-- **Route Visualization**: Clean line drawing representation of GPS tracks
-- **Print Sizes**: A5, A4, A3, A2, A1, A0 formats
-- **Text Customization**: 
-  - Add multiple text elements
-  - Drag-and-drop positioning
-  - Font size, family, color, and alignment controls
-- **Color Customization**: Route line and background colors with presets
-- **Export Options**: PNG, SVG, and PDF formats at high resolution
+1. Open `index.html` in any modern browser (Chrome, Firefox, Safari, Edge)
+2. Upload a GPS file (GPX, TCX, or FIT)
+3. Customize colors, line style, text, and paper size
+4. Export as PNG, SVG, or PDF — ready to print
 
-## Running the Application
+**No install. No account. Works completely offline.**
 
-### Option 1: Python Server (Recommended)
-```bash
-python3 server.py
-```
-Then open http://localhost:8000 in your browser.
+## Supported File Formats
 
-### Option 2: Direct File Access
-Open `index.html` directly in a modern web browser (some features may be limited).
+| Format | Source |
+|--------|--------|
+| **GPX** | Strava, Garmin Connect, AllTrails, Komoot, most fitness apps |
+| **TCX** | Garmin devices, Garmin Connect |
+| **FIT** | Garmin/Wahoo devices (native format) |
 
-## Usage
+## How to Get Your GPS File
 
-1. **Upload GPS File**: Drag and drop or click to browse for GPX, TCX, or FIT files
-2. **Select Print Size**: Choose from standard paper sizes (A5-A0)
-3. **Customize Colors**: Use color pickers or presets for route and background
-4. **Add Text**: Click "Add Text" to add customizable text elements
-   - Drag text to position
-   - Edit content, font, size, color, and alignment
-5. **Export**: Choose format (PNG/SVG/PDF) and click "Download Image"
+### From Strava
+1. Go to the activity page on strava.com
+2. Click the three dots (more) menu
+3. Select "Export GPX"
 
-## Technical Details
+### From Garmin Connect
+1. Go to the activity on connect.garmin.com
+2. Click the gear icon
+3. Select "Export to GPX" or "Export Original" (for FIT)
 
-- Pure JavaScript implementation (no framework dependencies)
-- HTML5 Canvas for rendering
-- High-resolution export support
-- Mobile responsive design
-- Drag-and-drop text positioning
+### From Apple Watch
+1. Open the Health app on your iPhone
+2. Tap your profile > "Export All Health Data"
+3. Find workout GPX files in the export, or use a third-party app like HealthFit to export individual workouts
 
-## Browser Support
+### From Other Apps
+Most fitness apps (Komoot, AllTrails, Suunto, Coros, etc.) offer GPX export from their website or app settings.
 
-Works best in modern browsers:
-- Chrome/Edge 90+
-- Firefox 88+
-- Safari 14+
+## Export Options
 
-## File Format Support
+- **PNG** — High-resolution raster image, great for printing or sharing
+- **SVG** — Scalable vector format, perfect for large prints
+- **PDF** — Print-ready document with exact paper dimensions
 
-- **GPX**: Standard GPS Exchange Format
-- **TCX**: Garmin Training Center XML
-- **FIT**: Flexible and Interoperable Data Transfer (basic support)
+## Tips for Best Results
+
+- Use activities with lots of GPS points (longer runs/rides) for more detailed art
+- Try different color presets — dark backgrounds with light routes look striking as prints
+- Use route smoothing for a more artistic look
+- For large prints (A2/A1), export as SVG for the sharpest quality
+- Add the activity name, date, and distance as text overlays for a personal touch
+
+## Paper Sizes
+
+Supports A5, A4, A3, A2, A1, and A0 in both portrait and landscape orientation.
+
+## System Requirements
+
+- Any modern web browser (Chrome, Firefox, Safari, Edge)
+- Works on Windows, macOS, and Linux
+- Works on tablets and phones
+- No internet connection required
+
+## Support
+
+For questions or issues, contact: daviddaddles@mail.com
+
+---
+
+Made with LineArt Maps
