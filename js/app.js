@@ -251,15 +251,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // --- Text ---
-    const editTextBtn = $('editTextBtn');
-    const textElementsList = $('textElements');
-    editTextBtn.addEventListener('click', () => {
-        const showing = textElementsList.style.display !== 'none';
-        textElementsList.style.display = showing ? 'none' : '';
-    });
-
     addTextBtn.addEventListener('click', () => {
-        textElementsList.style.display = ''; // show panel when adding
         textManager.addTextElement('Custom Text', {
             y: canvas.getBoundingClientRect().height / 2,
             fontSize: 16, fontFamily: 'Montserrat', alignment: 'center',

@@ -124,51 +124,94 @@ class TextManager {
         this.textElements.forEach(element => {
             const item = document.createElement('div');
             item.className = 'text-element-item';
+
+            // Truncate display text
+            const display = element.text.length > 28 ? element.text.slice(0, 28) + '…' : element.text;
+
             item.innerHTML = `
-                <div class="text-element-controls">
-                    <input type="text" class="text-input" value="${element.text}"
-                           placeholder="Enter text" data-id="${element.id}">
-                    <div class="text-style-controls">
-                        <input type="number" min="8" max="72" value="${element.fontSize}"
-                               data-id="${element.id}" data-property="fontSize" placeholder="Size">
+                <div class="text-item-header" data-id="${element.id}">
+                    <span class="text-item-label">${display}</span>
+                    <button class="btn-icon-sm text-edit-toggle" data-id="${element.id}" title="Edit">
+                        <svg viewBox="0 0 24 24" width="11" height="11"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 000-1.41l-2.34-2.34a1 1 0 00-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" fill="currentColor"/></svg>
+                    </button>
+                    <button class="btn-icon-sm text-remove-toggle" data-id="${element.id}" title="Remove">
+                        <svg viewBox="0 0 24 24" width="11" height="11"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" fill="currentColor"/></svg>
+                    </button>
+                </div>
+                <div class="text-item-body" data-id="${element.id}" style="display:none">
+                    <div class="text-edit-row">
+                        <label>Text</label>
+                        <input type="text" class="text-input" value="${element.text}"
+                               placeholder="Enter text" data-id="${element.id}">
+                    </div>
+                    <div class="text-edit-row">
+                        <label>Font</label>
                         <select data-id="${element.id}" data-property="fontFamily">
                             ${fontOptions.replace(
                                 `value="${element.fontFamily}"`,
                                 `value="${element.fontFamily}" selected`
                             )}
                         </select>
-                        <input type="color" value="${element.color}"
-                               data-id="${element.id}" data-property="color">
+                    </div>
+                    <div class="text-edit-row">
+                        <label>Size</label>
+                        <input type="number" min="8" max="72" value="${element.fontSize}"
+                               data-id="${element.id}" data-property="fontSize">
+                    </div>
+                    <div class="text-edit-row">
+                        <label>Align</label>
                         <select data-id="${element.id}" data-property="alignment">
                             <option value="left" ${element.alignment === 'left' ? 'selected' : ''}>Left</option>
                             <option value="center" ${element.alignment === 'center' ? 'selected' : ''}>Center</option>
                             <option value="right" ${element.alignment === 'right' ? 'selected' : ''}>Right</option>
                         </select>
                     </div>
-                    <button class="remove-text-btn" data-id="${element.id}">Remove</button>
+                    <div class="text-edit-row">
+                        <label>Color</label>
+                        <input type="color" value="${element.color}"
+                               data-id="${element.id}" data-property="color">
+                    </div>
                 </div>
             `;
             container.appendChild(item);
         });
 
-        container.querySelectorAll('.text-input').forEach(input => {
-            input.addEventListener('input', (e) => {
-                this.updateTextElement(e.target.dataset.id, { text: e.target.value });
+        // Toggle edit panels
+        container.querySelectorAll('.text-edit-toggle').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const id = e.currentTarget.dataset.id;
+                const body = container.querySelector(`.text-item-body[data-id="${id}"]`);
+                if (body) body.style.display = body.style.display === 'none' ? '' : 'none';
             });
         });
 
+        // Remove buttons
+        container.querySelectorAll('.text-remove-toggle').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                this.removeTextElement(e.currentTarget.dataset.id);
+            });
+        });
+
+        // Text input
+        container.querySelectorAll('.text-input').forEach(input => {
+            input.addEventListener('input', (e) => {
+                this.updateTextElement(e.target.dataset.id, { text: e.target.value });
+                // Update the label in the header
+                const header = container.querySelector(`.text-item-header[data-id="${e.target.dataset.id}"] .text-item-label`);
+                if (header) {
+                    const t = e.target.value;
+                    header.textContent = t.length > 28 ? t.slice(0, 28) + '…' : t;
+                }
+            });
+        });
+
+        // Property inputs
         container.querySelectorAll('input[data-property], select[data-property]').forEach(input => {
             input.addEventListener('change', (e) => {
                 const value = e.target.type === 'number' ? parseInt(e.target.value) : e.target.value;
                 this.updateTextElement(e.target.dataset.id, {
                     [e.target.dataset.property]: value
                 });
-            });
-        });
-
-        container.querySelectorAll('.remove-text-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                this.removeTextElement(e.target.dataset.id);
             });
         });
     }
