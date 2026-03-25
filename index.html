@@ -105,7 +105,20 @@
                     </div>
                     </div>
                     <div id="speedInfo" class="speed-info" style="display:none">
-                        <p>Route colored by speed: <span style="color:hsl(240,100%,50%)">slow</span> → <span style="color:hsl(120,100%,50%)">medium</span> → <span style="color:hsl(0,100%,50%)">fast</span></p>
+                        <div class="heatmap-colors">
+                            <div class="color-control">
+                                <label for="heatSlow">Slow</label>
+                                <input type="color" id="heatSlow" value="#0000FF">
+                            </div>
+                            <div class="color-control">
+                                <label for="heatMedium">Medium</label>
+                                <input type="color" id="heatMedium" value="#00FF00">
+                            </div>
+                            <div class="color-control">
+                                <label for="heatFast">Fast</label>
+                                <input type="color" id="heatFast" value="#FF0000">
+                            </div>
+                        </div>
                         <div class="color-control" style="margin-top:0.5rem">
                             <label for="backgroundColor2">Background</label>
                             <input type="color" id="backgroundColor2" value="#FFFFFF">

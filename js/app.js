@@ -8,6 +8,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const routeColorInput = document.getElementById('routeColor');
     const backgroundColorInput = document.getElementById('backgroundColor');
     const backgroundColor2Input = document.getElementById('backgroundColor2');
+    const heatSlowInput = document.getElementById('heatSlow');
+    const heatMediumInput = document.getElementById('heatMedium');
+    const heatFastInput = document.getElementById('heatFast');
     const lineWidthSlider = document.getElementById('lineWidth');
     const lineWidthValue = document.getElementById('lineWidthValue');
     const lineStyleSelect = document.getElementById('lineStyle');
@@ -32,7 +35,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let currentGPSData = null;
 
-    // Initialize canvas
     routeRenderer.setPrintSize('a4');
     syncOverlaySize();
 
@@ -51,9 +53,7 @@ document.addEventListener('DOMContentLoaded', () => {
     fileUploadArea.addEventListener('drop', (e) => {
         e.preventDefault();
         fileUploadArea.classList.remove('drag-over');
-        if (e.dataTransfer.files.length > 0) {
-            handleFileUpload(e.dataTransfer.files[0]);
-        }
+        if (e.dataTransfer.files.length > 0) handleFileUpload(e.dataTransfer.files[0]);
     });
 
     fileInput.addEventListener('change', (e) => {
@@ -74,7 +74,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             routeRenderer.loadCoordinates(result.coordinates);
 
-            // Show/hide speed heatmap option based on time data availability
+            // Show/hide speed heatmap option
             if (routeRenderer.hasTimeData) {
                 speedModeLabel.classList.remove('disabled');
                 speedModeLabel.querySelector('input').disabled = false;
@@ -82,8 +82,7 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 speedModeLabel.classList.add('disabled');
                 speedModeLabel.querySelector('input').disabled = true;
-                speedModeLabel.title = 'No time data available in this file';
-                // Force back to solid if was on speed
+                speedModeLabel.title = 'No time data in this file';
                 if (routeRenderer.colorMode === 'speed') {
                     document.querySelector('input[name="colorMode"][value="solid"]').checked = true;
                     routeRenderer.setColorMode('solid');
@@ -92,14 +91,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
 
-            // Show file info
             uploadFeedback.className = 'upload-feedback success';
             uploadFeedback.innerHTML = `
                 <strong>${file.name}</strong><br>
                 ${result.coordinates.length} GPS points loaded${routeRenderer.hasTimeData ? ' (speed data available)' : ''}
             `;
 
-            // Update upload area to show loaded state
             fileUploadArea.classList.add('file-loaded');
             const prompt = fileUploadArea.querySelector('.upload-prompt');
             if (prompt) {
@@ -108,28 +105,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
             exportBtn.disabled = false;
 
-            // Add default text elements with metadata (centered)
+            // Add default text elements from metadata
             textManager.clearAll();
-
-            const canvasRect = canvas.getBoundingClientRect();
-            const centerX = canvasRect.width / 2;
 
             if (result.metadata.name) {
                 textManager.addTextElement(result.metadata.name, {
-                    x: centerX, y: 50, fontSize: 24, fontFamily: 'Playfair Display', alignment: 'center'
+                    y: 50, fontSize: 24, fontFamily: 'Playfair Display', alignment: 'center'
                 });
             }
 
             if (result.metadata.time) {
                 textManager.addTextElement(result.metadata.time.toLocaleDateString(), {
-                    x: centerX, y: 80, fontSize: 16, fontFamily: 'Montserrat', alignment: 'center'
+                    y: 80, fontSize: 16, fontFamily: 'Montserrat', alignment: 'center'
                 });
             }
 
             if (result.metadata.distance) {
                 const distKm = (result.metadata.distance / 1000).toFixed(2);
                 textManager.addTextElement(`${distKm} km`, {
-                    x: centerX, y: 110, fontSize: 16, fontFamily: 'Montserrat', alignment: 'center'
+                    y: 110, fontSize: 16, fontFamily: 'Montserrat', alignment: 'center'
                 });
             }
 
@@ -137,7 +131,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const h = Math.floor(result.metadata.duration / 3600);
                 const m = Math.floor((result.metadata.duration % 3600) / 60);
                 textManager.addTextElement(h > 0 ? `${h}h ${m}m` : `${m}m`, {
-                    x: centerX, y: 140, fontSize: 16, fontFamily: 'Montserrat', alignment: 'center'
+                    y: 140, fontSize: 16, fontFamily: 'Montserrat', alignment: 'center'
                 });
             }
 
@@ -152,9 +146,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function showLoading(show) {
-        if (loadingOverlay) {
-            loadingOverlay.style.display = show ? 'flex' : 'none';
-        }
+        if (loadingOverlay) loadingOverlay.style.display = show ? 'flex' : 'none';
     }
 
     // --- Print Size ---
@@ -177,13 +169,8 @@ document.addEventListener('DOMContentLoaded', () => {
         radio.addEventListener('change', (e) => {
             const mode = e.target.value;
             routeRenderer.setColorMode(mode);
-            if (mode === 'speed') {
-                solidColorControls.style.display = 'none';
-                speedInfo.style.display = '';
-            } else {
-                solidColorControls.style.display = '';
-                speedInfo.style.display = 'none';
-            }
+            solidColorControls.style.display = mode === 'speed' ? 'none' : '';
+            speedInfo.style.display = mode === 'speed' ? '' : 'none';
         });
     });
 
@@ -201,9 +188,13 @@ document.addEventListener('DOMContentLoaded', () => {
         if (routeRenderer.coordinates.length > 0) routeRenderer.render();
     });
 
+    // --- Heatmap Colors ---
+    heatSlowInput.addEventListener('change', (e) => routeRenderer.setHeatmapColor('slow', e.target.value));
+    heatMediumInput.addEventListener('change', (e) => routeRenderer.setHeatmapColor('medium', e.target.value));
+    heatFastInput.addEventListener('change', (e) => routeRenderer.setHeatmapColor('fast', e.target.value));
+
     document.querySelectorAll('.preset-btn').forEach(btn => {
         btn.addEventListener('click', () => {
-            // Switch to solid mode when clicking presets
             document.querySelector('input[name="colorMode"][value="solid"]').checked = true;
             routeRenderer.setColorMode('solid');
             solidColorControls.style.display = '';
@@ -224,9 +215,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // --- Line Style ---
-    lineStyleSelect.addEventListener('change', (e) => {
-        routeRenderer.setLineStyle(e.target.value);
-    });
+    lineStyleSelect.addEventListener('change', (e) => routeRenderer.setLineStyle(e.target.value));
 
     // --- Smoothing ---
     smoothingSlider.addEventListener('input', (e) => {
@@ -239,7 +228,6 @@ document.addEventListener('DOMContentLoaded', () => {
     addTextBtn.addEventListener('click', () => {
         const canvasRect = canvas.getBoundingClientRect();
         textManager.addTextElement('Custom Text', {
-            x: canvasRect.width / 2,
             y: canvasRect.height / 2,
             fontSize: 20,
             fontFamily: 'Montserrat',
@@ -268,7 +256,6 @@ document.addEventListener('DOMContentLoaded', () => {
         routeRenderer.hasTimeData = false;
         routeRenderer.colorMode = 'solid';
 
-        // Clear canvas
         const size = routeRenderer.getSize();
         const ctx = canvas.getContext('2d');
         ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -279,27 +266,26 @@ document.addEventListener('DOMContentLoaded', () => {
         textManager.clearAll();
         exportBtn.disabled = true;
 
-        // Reset upload area
         fileUploadArea.classList.remove('file-loaded');
         const prompt = fileUploadArea.querySelector('.upload-prompt');
-        if (prompt) {
-            prompt.querySelector('p').textContent = 'Drag & drop your GPS file here or click to browse';
-        }
+        if (prompt) prompt.querySelector('p').textContent = 'Drag & drop your GPS file here or click to browse';
         uploadFeedback.className = 'upload-feedback';
         uploadFeedback.textContent = '';
         fileInput.value = '';
 
-        // Reset color mode
         document.querySelector('input[name="colorMode"][value="solid"]').checked = true;
         solidColorControls.style.display = '';
         speedInfo.style.display = 'none';
         speedModeLabel.classList.remove('disabled');
         speedModeLabel.querySelector('input').disabled = false;
 
-        // Reset controls to defaults
         routeColorInput.value = '#000000';
         backgroundColorInput.value = '#FFFFFF';
         backgroundColor2Input.value = '#FFFFFF';
+        heatSlowInput.value = '#0000FF';
+        heatMediumInput.value = '#00FF00';
+        heatFastInput.value = '#FF0000';
+        routeRenderer.heatmapColors = { slow: [0,0,255], medium: [0,255,0], fast: [255,0,0] };
         routeRenderer.setColors('#000000', '#FFFFFF');
         lineWidthSlider.value = '2';
         lineWidthValue.textContent = '2px';
@@ -308,7 +294,7 @@ document.addEventListener('DOMContentLoaded', () => {
         smoothingValue.textContent = 'Off';
     });
 
-    // --- Resize Handling ---
+    // --- Resize ---
     function syncOverlaySize() {
         requestAnimationFrame(() => {
             const rect = canvas.getBoundingClientRect();

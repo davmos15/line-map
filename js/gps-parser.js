@@ -81,19 +81,46 @@ class GPSParser {
         const coordinates = [];
         const metadata = { name: '', time: null, distance: 0, duration: null };
 
+        // Try to get activity name from Sport attribute
         const activityElement = xmlDoc.querySelector('Activity');
         if (activityElement) {
             const sport = activityElement.getAttribute('Sport');
             if (sport) metadata.name = sport;
         }
 
-        const idElement = xmlDoc.querySelector('Id');
-        if (idElement) metadata.time = new Date(idElement.textContent);
+        // Fallback: try Notes element for a custom name
+        if (!metadata.name) {
+            const notesElem = xmlDoc.querySelector('Notes');
+            if (notesElem && notesElem.textContent.trim()) {
+                metadata.name = notesElem.textContent.trim();
+            }
+        }
 
+        // Get start time from Id element
+        const idElement = xmlDoc.querySelector('Id');
+        if (idElement) {
+            const d = new Date(idElement.textContent);
+            if (!isNaN(d.getTime())) metadata.time = d;
+        }
+
+        // Aggregate distance and duration across all Laps
+        const laps = xmlDoc.querySelectorAll('Lap');
+        let totalDist = 0, totalTime = 0;
+        laps.forEach(lap => {
+            const distElem = lap.querySelector('DistanceMeters');
+            const timeElem = lap.querySelector('TotalTimeSeconds');
+            if (distElem) totalDist += parseFloat(distElem.textContent) || 0;
+            if (timeElem) totalTime += parseFloat(timeElem.textContent) || 0;
+        });
+        if (totalDist > 0) metadata.distance = totalDist;
+        if (totalTime > 0) metadata.duration = totalTime;
+
+        // Extract coordinates with timestamps
         const trackpoints = xmlDoc.querySelectorAll('Trackpoint');
         let prevPoint = null;
         let firstTime = null;
         let lastTime = null;
+        let calcDist = 0;
 
         trackpoints.forEach(point => {
             const latElem = point.querySelector('LatitudeDegrees');
@@ -108,28 +135,30 @@ class GPSParser {
 
                     const timeElem = point.querySelector('Time');
                     if (timeElem) {
-                        coord.time = new Date(timeElem.textContent);
-                        if (!firstTime) firstTime = coord.time;
-                        lastTime = coord.time;
+                        const t = new Date(timeElem.textContent);
+                        if (!isNaN(t.getTime())) {
+                            coord.time = t;
+                            if (!firstTime) firstTime = t;
+                            lastTime = t;
+                        }
                     }
 
                     coordinates.push(coord);
 
                     if (prevPoint) {
-                        metadata.distance += this.calculateDistance(prevPoint, { lat, lon });
+                        calcDist += this.calculateDistance(prevPoint, { lat, lon });
                     }
                     prevPoint = { lat, lon };
                 }
             }
         });
 
-        const distanceElem = xmlDoc.querySelector('DistanceMeters');
-        if (distanceElem) metadata.distance = parseFloat(distanceElem.textContent);
+        // Fallback: use calculated distance if laps didn't provide it
+        if (!metadata.distance && calcDist > 0) metadata.distance = calcDist;
 
-        const totalTimeElem = xmlDoc.querySelector('TotalTimeSeconds');
-        if (totalTimeElem) {
-            metadata.duration = parseFloat(totalTimeElem.textContent);
-        } else if (firstTime && lastTime) {
+        // Fallback: use first/last time if laps didn't provide duration
+        if (!metadata.time && firstTime) metadata.time = firstTime;
+        if (!metadata.duration && firstTime && lastTime) {
             metadata.duration = (lastTime - firstTime) / 1000;
         }
 

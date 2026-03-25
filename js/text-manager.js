@@ -18,18 +18,11 @@ class TextManager {
         ];
     }
 
-    _alignTransform(alignment) {
-        if (alignment === 'center') return 'translateX(-50%)';
-        if (alignment === 'right') return 'translateX(-100%)';
-        return 'none';
-    }
-
     addTextElement(text = 'New Text', options = {}) {
         const id = `text-${this.nextId++}`;
         const element = {
             id,
             text,
-            x: options.x || 50,
             y: options.y || 50,
             fontSize: options.fontSize || 16,
             fontFamily: options.fontFamily || 'Montserrat',
@@ -48,12 +41,11 @@ class TextManager {
         div.className = 'draggable-text';
         div.id = element.id;
         div.textContent = element.text;
-        div.style.left = `${element.x}px`;
         div.style.top = `${element.y}px`;
         div.style.fontSize = `${element.fontSize}px`;
         div.style.fontFamily = element.fontFamily;
         div.style.color = element.color;
-        div.style.transform = this._alignTransform(element.alignment);
+        div.style.textAlign = element.alignment;
 
         this.makeDraggable(div, element);
         this.overlayContainer.appendChild(div);
@@ -61,26 +53,20 @@ class TextManager {
 
     makeDraggable(div, element) {
         let isDragging = false;
-        let startX, startY, initialX, initialY;
+        let startY, initialY;
 
         const startDrag = (e) => {
             isDragging = true;
             div.classList.add('dragging');
-            startX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
             startY = e.type.includes('mouse') ? e.clientY : e.touches[0].clientY;
-            // Use the stored anchor position, not the visual bounding rect
-            initialX = element.x;
             initialY = element.y;
             e.preventDefault();
         };
 
         const drag = (e) => {
             if (!isDragging) return;
-            const currentX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
             const currentY = e.type.includes('mouse') ? e.clientY : e.touches[0].clientY;
-            element.x = initialX + (currentX - startX);
             element.y = initialY + (currentY - startY);
-            div.style.left = `${element.x}px`;
             div.style.top = `${element.y}px`;
         };
 
@@ -107,9 +93,7 @@ class TextManager {
             if (properties.fontSize !== undefined) div.style.fontSize = `${properties.fontSize}px`;
             if (properties.fontFamily !== undefined) div.style.fontFamily = properties.fontFamily;
             if (properties.color !== undefined) div.style.color = properties.color;
-            if (properties.alignment !== undefined) {
-                div.style.transform = this._alignTransform(properties.alignment);
-            }
+            if (properties.alignment !== undefined) div.style.textAlign = properties.alignment;
         }
     }
 

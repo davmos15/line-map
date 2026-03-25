@@ -24,10 +24,28 @@ class RouteRenderer {
         this.smoothing = 0;
         this.displayScale = 2;
         this.canvasScale = 3;
-        this.colorMode = 'solid'; // 'solid' or 'speed'
-        this.speeds = []; // per-segment speeds
+        this.colorMode = 'solid';
+        this.speeds = [];
         this.speedRange = { min: 0, max: 1 };
         this.hasTimeData = false;
+        // Heatmap colors as [r,g,b] arrays
+        this.heatmapColors = {
+            slow: [0, 0, 255],
+            medium: [0, 255, 0],
+            fast: [255, 0, 0]
+        };
+    }
+
+    static hexToRGB(hex) {
+        const r = parseInt(hex.slice(1, 3), 16);
+        const g = parseInt(hex.slice(3, 5), 16);
+        const b = parseInt(hex.slice(5, 7), 16);
+        return [r, g, b];
+    }
+
+    setHeatmapColor(which, hex) {
+        this.heatmapColors[which] = RouteRenderer.hexToRGB(hex);
+        if (this.coordinates.length > 0 && this.colorMode === 'speed') this.render();
     }
 
     getSize() {
@@ -108,10 +126,8 @@ class RouteRenderer {
     calculateSpeeds() {
         this.speeds = [];
         this.hasTimeData = false;
-
         if (this.coordinates.length < 2) return;
 
-        // Check if we have time data
         const withTime = this.coordinates.filter(c => c.time != null);
         if (withTime.length < 2) return;
 
@@ -123,10 +139,10 @@ class RouteRenderer {
             const curr = this.coordinates[i];
 
             if (prev.time && curr.time) {
-                const dt = (curr.time - prev.time) / 1000; // seconds
+                const dt = (curr.time - prev.time) / 1000;
                 if (dt > 0) {
-                    const dist = GPSParser.calculateDistance(prev, curr); // meters
-                    const speed = dist / dt; // m/s
+                    const dist = GPSParser.calculateDistance(prev, curr);
+                    const speed = dist / dt;
                     this.speeds.push(speed);
                     if (speed < minSpeed) minSpeed = speed;
                     if (speed > maxSpeed) maxSpeed = speed;
@@ -134,26 +150,45 @@ class RouteRenderer {
                     this.speeds.push(this.speeds.length > 0 ? this.speeds[this.speeds.length - 1] : 0);
                 }
             } else {
-                // No time for this pair, use previous speed or 0
                 this.speeds.push(this.speeds.length > 0 ? this.speeds[this.speeds.length - 1] : 0);
             }
         }
 
-        // Use 5th and 95th percentile to avoid outliers skewing the gradient
         if (this.speeds.length > 0) {
             const sorted = [...this.speeds].sort((a, b) => a - b);
-            const p5 = sorted[Math.floor(sorted.length * 0.05)];
-            const p95 = sorted[Math.floor(sorted.length * 0.95)];
-            this.speedRange = { min: p5, max: p95 };
+            this.speedRange = {
+                min: sorted[Math.floor(sorted.length * 0.05)],
+                max: sorted[Math.floor(sorted.length * 0.95)]
+            };
         }
     }
 
-    // HSL-based gradient: blue (slow) → cyan → green → yellow → red (fast)
+    // Interpolate between two RGB arrays
+    _lerpColor(c1, c2, t) {
+        return [
+            Math.round(c1[0] + (c2[0] - c1[0]) * t),
+            Math.round(c1[1] + (c2[1] - c1[1]) * t),
+            Math.round(c1[2] + (c2[2] - c1[2]) * t)
+        ];
+    }
+
     speedToColor(speed) {
         const { min, max } = this.speedRange;
         const t = Math.max(0, Math.min(1, (speed - min) / (max - min || 1)));
-        const hue = (1 - t) * 240; // 240=blue → 0=red
-        return `hsl(${hue}, 100%, 50%)`;
+        let rgb;
+        if (t < 0.5) {
+            rgb = this._lerpColor(this.heatmapColors.slow, this.heatmapColors.medium, t * 2);
+        } else {
+            rgb = this._lerpColor(this.heatmapColors.medium, this.heatmapColors.fast, (t - 0.5) * 2);
+        }
+        return `rgb(${rgb[0]},${rgb[1]},${rgb[2]})`;
+    }
+
+    // Quantize speed to a bucket (0-100) for batching consecutive same-color segments
+    _speedBucket(speed) {
+        const { min, max } = this.speedRange;
+        const t = Math.max(0, Math.min(1, (speed - min) / (max - min || 1)));
+        return Math.round(t * 100);
     }
 
     latLonToCanvas(lat, lon, size) {
@@ -228,26 +263,36 @@ class RouteRenderer {
         ctx.lineJoin = 'round';
         this._applyLineStyle(ctx);
 
-        // Draw each segment with its speed color
-        for (let i = 0; i < points.length - 1; i++) {
-            const speed = this.speeds[i] !== undefined ? this.speeds[i] : 0;
-            ctx.strokeStyle = this.speedToColor(speed);
+        // Batch consecutive segments with the same quantized color for smooth lines
+        const buckets = this.speeds.map(s => this._speedBucket(s));
+        let i = 0;
+
+        while (i < points.length - 1) {
+            const bucket = buckets[i];
+            const color = this.speedToColor(this.speeds[i]);
+            ctx.strokeStyle = color;
             ctx.beginPath();
             ctx.moveTo(points[i].x, points[i].y);
 
-            if (this.smoothing > 0 && points.length > 2) {
-                const p0 = points[Math.max(0, i - 1)];
-                const p1 = points[i];
-                const p2 = points[i + 1];
-                const p3 = points[Math.min(points.length - 1, i + 2)];
-                const t = this.smoothing;
-                const cp1x = p1.x + (p2.x - p0.x) * t / 6;
-                const cp1y = p1.y + (p2.y - p0.y) * t / 6;
-                const cp2x = p2.x - (p3.x - p1.x) * t / 6;
-                const cp2y = p2.y - (p3.y - p1.y) * t / 6;
-                ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, p2.x, p2.y);
-            } else {
-                ctx.lineTo(points[i + 1].x, points[i + 1].y);
+            // Draw consecutive segments with the same color bucket
+            while (i < points.length - 1 && buckets[i] === bucket) {
+                if (this.smoothing > 0 && points.length > 2) {
+                    const p0 = points[Math.max(0, i - 1)];
+                    const p1 = points[i];
+                    const p2 = points[i + 1];
+                    const p3 = points[Math.min(points.length - 1, i + 2)];
+                    const t = this.smoothing;
+                    ctx.bezierCurveTo(
+                        p1.x + (p2.x - p0.x) * t / 6,
+                        p1.y + (p2.y - p0.y) * t / 6,
+                        p2.x - (p3.x - p1.x) * t / 6,
+                        p2.y - (p3.y - p1.y) * t / 6,
+                        p2.x, p2.y
+                    );
+                } else {
+                    ctx.lineTo(points[i + 1].x, points[i + 1].y);
+                }
+                i++;
             }
             ctx.stroke();
         }
@@ -263,11 +308,13 @@ class RouteRenderer {
             const p1 = points[i];
             const p2 = points[i + 1];
             const p3 = points[Math.min(points.length - 1, i + 2)];
-            const cp1x = p1.x + (p2.x - p0.x) * t / 6;
-            const cp1y = p1.y + (p2.y - p0.y) * t / 6;
-            const cp2x = p2.x - (p3.x - p1.x) * t / 6;
-            const cp2y = p2.y - (p3.y - p1.y) * t / 6;
-            ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, p2.x, p2.y);
+            ctx.bezierCurveTo(
+                p1.x + (p2.x - p0.x) * t / 6,
+                p1.y + (p2.y - p0.y) * t / 6,
+                p2.x - (p3.x - p1.x) * t / 6,
+                p2.y - (p3.y - p1.y) * t / 6,
+                p2.x, p2.y
+            );
         }
     }
 

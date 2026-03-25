@@ -16,11 +16,17 @@ class ExportManager {
         }
     }
 
-    // Convert text element pixel position to mm-space
-    _textToMM(element) {
+    // Convert text element to mm-space for export
+    _textToMM(element, size) {
         const displayScale = this.routeRenderer.displayScale;
+        const margin = 8; // mm margin from edges
+        let x;
+        if (element.alignment === 'center') x = size.width / 2;
+        else if (element.alignment === 'right') x = size.width - margin;
+        else x = margin;
+
         return {
-            x: element.x / displayScale,
+            x,
             y: element.y / displayScale,
             fontSize: element.fontSize / displayScale,
             fontFamily: element.fontFamily,
@@ -33,7 +39,7 @@ class ExportManager {
     _drawTextElements(ctx, size) {
         const textElements = this.textManager.getTextElements();
         textElements.forEach(element => {
-            const mm = this._textToMM(element);
+            const mm = this._textToMM(element, size);
             ctx.font = `${mm.fontSize}px ${mm.fontFamily}`;
             ctx.fillStyle = mm.color;
             ctx.textAlign = mm.alignment;
@@ -158,7 +164,7 @@ class ExportManager {
 
         // Text elements (converted to mm-space)
         this.textManager.getTextElements().forEach(element => {
-            const mm = this._textToMM(element);
+            const mm = this._textToMM(element, size);
             const text = document.createElementNS(ns, 'text');
             text.setAttribute('x', mm.x);
             text.setAttribute('y', mm.y + mm.fontSize);

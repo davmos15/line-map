@@ -256,8 +256,9 @@ h2 {
     color: #888;
 }
 
-.speed-info p {
-    line-height: 1.4;
+.heatmap-colors {
+    display: flex;
+    gap: 0.5rem;
 }
 
 /* Colors */
@@ -562,10 +563,12 @@ h2 {
 
 .draggable-text {
     position: absolute;
-    cursor: move;
+    left: 0;
+    width: 100%;
+    cursor: ns-resize;
     user-select: none;
     pointer-events: all;
-    padding: 2px 4px;
+    padding: 2px 12px;
     transition: opacity 0.2s;
 }
 
