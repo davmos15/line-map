@@ -18,6 +18,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const smoothingValue = $('smoothingValue');
     const showMarkerToggle = $('showMarker');
     const showMapToggle = $('showMap');
+    const mapOpacitySlider = $('mapOpacity');
+    const mapOpacityValue = $('mapOpacityValue');
+    const mapOpacityRow = $('mapOpacityRow');
     const addTextBtn = $('addTextBtn');
     const exportBtn = $('exportBtn');
     const exportFormat = $('exportFormat');
@@ -58,6 +61,9 @@ document.addEventListener('DOMContentLoaded', () => {
             if (result.coordinates.length === 0) throw new Error('No GPS coordinates found');
 
             routeRenderer.loadCoordinates(result.coordinates);
+
+            // Auto-load map tiles if city map is enabled
+            if (routeRenderer.showMap) routeRenderer.loadMapTiles();
 
             // Speed heatmap availability
             if (routeRenderer.hasTimeData) {
@@ -163,6 +169,7 @@ document.addEventListener('DOMContentLoaded', () => {
     backgroundColorInput.addEventListener('change', e => {
         routeRenderer.setColors(routeColorInput.value, e.target.value);
         backgroundColor2Input.value = e.target.value;
+        if (routeRenderer.showMap && routeRenderer.bounds) routeRenderer.loadMapTiles();
     });
     backgroundColor2Input.addEventListener('change', e => {
         routeRenderer.backgroundColor = e.target.value;
@@ -228,12 +235,19 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     showMapToggle.addEventListener('change', e => {
         routeRenderer.showMap = e.target.checked;
+        mapOpacityRow.style.display = e.target.checked ? '' : 'none';
         if (e.target.checked && routeRenderer.bounds) {
             routeRenderer.loadMapTiles();
         } else {
             routeRenderer._mapReady = false;
             if (routeRenderer.coordinates.length > 0) routeRenderer.render();
         }
+    });
+    mapOpacitySlider.addEventListener('input', e => {
+        const v = parseFloat(e.target.value);
+        mapOpacityValue.textContent = `${Math.round(v * 100)}%`;
+        routeRenderer.mapOpacity = v;
+        if (routeRenderer.coordinates.length > 0) routeRenderer.render();
     });
 
     // --- Text ---
@@ -264,9 +278,13 @@ document.addEventListener('DOMContentLoaded', () => {
         routeRenderer.hasTimeData = false;
         routeRenderer.colorMode = 'solid';
         routeRenderer.showStartMarker = true;
-        routeRenderer.showMap = false;
+        routeRenderer.showMap = true;
+        routeRenderer.mapOpacity = 0.35;
         routeRenderer._mapReady = false;
-        showMapToggle.checked = false;
+        showMapToggle.checked = true;
+        mapOpacitySlider.value = '0.35';
+        mapOpacityValue.textContent = '35%';
+        mapOpacityRow.style.display = '';
 
         const size = routeRenderer.getSize();
         const ctx = canvas.getContext('2d');

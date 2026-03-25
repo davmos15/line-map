@@ -29,7 +29,8 @@ class RouteRenderer {
         this.speedRange = { min: 0, max: 1 };
         this.hasTimeData = false;
         this.showStartMarker = true;
-        this.showMap = false;
+        this.showMap = true;
+        this.mapOpacity = 0.35; // 0 = hidden, 1 = full strength
         this._tileCache = {};
         this._mapReady = false;
         // Heatmap colors as [r,g,b] arrays
@@ -450,8 +451,9 @@ class RouteRenderer {
                 ctx.drawImage(tile, p1.x, p1.y, p2.x - p1.x, p2.y - p1.y);
             }
         }
-        // Wash with background color to keep it subtle and themed
-        ctx.globalAlpha = 0.82;
+        // Wash with background color — mapOpacity controls how much map shows through
+        // wash = 1 - mapOpacity (high opacity = less wash = more map visible)
+        ctx.globalAlpha = 1 - this.mapOpacity;
         ctx.fillStyle = this.backgroundColor;
         ctx.fillRect(0, 0, size.width, size.height);
         ctx.globalAlpha = 1;
