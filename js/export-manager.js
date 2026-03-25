@@ -203,6 +203,8 @@ class ExportManager {
             }
 
             // Start marker
+            if (!rr.showStartMarker) { /* skip */ }
+            else {
             const startPt = points[0];
             const markerColor = rr.colorMode === 'speed' && rr.hasTimeData
                 ? rr.speedToColor(rr.speeds[0] || 0) : rr.routeColor;
@@ -212,6 +214,7 @@ class ExportManager {
             marker.setAttribute('r', rr.lineWidth * 1.8);
             marker.setAttribute('fill', markerColor);
             svg.appendChild(marker);
+            }
         }
 
         // Text elements (converted to mm-space)
@@ -296,7 +299,8 @@ class ExportManager {
         ctx.fillStyle = this.routeRenderer.backgroundColor;
         ctx.fillRect(0, 0, size.width, size.height);
 
-        // Re-render route at export resolution
+        // Decorations and route at export resolution
+        this.routeRenderer.renderDecorations(ctx, size);
         this.routeRenderer.renderRoute(ctx, size);
 
         // Draw text elements

@@ -1,88 +1,70 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // DOM elements
-    const fileUploadArea = document.getElementById('fileUploadArea');
-    const fileInput = document.getElementById('fileInput');
-    const uploadFeedback = document.getElementById('uploadFeedback');
-    const printSizeSelect = document.getElementById('printSize');
-    const orientationBtn = document.getElementById('orientationBtn');
-    const routeColorInput = document.getElementById('routeColor');
-    const backgroundColorInput = document.getElementById('backgroundColor');
-    const backgroundColor2Input = document.getElementById('backgroundColor2');
-    const heatSlowInput = document.getElementById('heatSlow');
-    const heatMediumInput = document.getElementById('heatMedium');
-    const heatFastInput = document.getElementById('heatFast');
-    const lineWidthSlider = document.getElementById('lineWidth');
-    const lineWidthValue = document.getElementById('lineWidthValue');
-    const lineStyleSelect = document.getElementById('lineStyle');
-    const smoothingSlider = document.getElementById('smoothing');
-    const smoothingValue = document.getElementById('smoothingValue');
-    const addTextBtn = document.getElementById('addTextBtn');
-    const exportBtn = document.getElementById('exportBtn');
-    const exportFormat = document.getElementById('exportFormat');
-    const resetBtn = document.getElementById('resetBtn');
-    const canvas = document.getElementById('routeCanvas');
-    const textOverlay = document.getElementById('textOverlay');
-    const loadingOverlay = document.getElementById('loadingOverlay');
-    const solidColorControls = document.getElementById('solidColorControls');
-    const speedInfo = document.getElementById('speedInfo');
-    const speedModeLabel = document.getElementById('speedModeLabel');
+    const $ = id => document.getElementById(id);
+    const fileUploadArea = $('fileUploadArea');
+    const fileInput = $('fileInput');
+    const uploadFeedback = $('uploadFeedback');
+    const printSizeSelect = $('printSize');
+    const orientationBtn = $('orientationBtn');
+    const routeColorInput = $('routeColor');
+    const backgroundColorInput = $('backgroundColor');
+    const backgroundColor2Input = $('backgroundColor2');
+    const heatSlowInput = $('heatSlow');
+    const heatMediumInput = $('heatMedium');
+    const heatFastInput = $('heatFast');
+    const lineWidthSlider = $('lineWidth');
+    const lineWidthValue = $('lineWidthValue');
+    const lineStyleSelect = $('lineStyle');
+    const smoothingSlider = $('smoothing');
+    const smoothingValue = $('smoothingValue');
+    const showMarkerToggle = $('showMarker');
+    const addTextBtn = $('addTextBtn');
+    const exportBtn = $('exportBtn');
+    const exportFormat = $('exportFormat');
+    const resetBtn = $('resetBtn');
+    const canvas = $('routeCanvas');
+    const textOverlay = $('textOverlay');
+    const loadingOverlay = $('loadingOverlay');
+    const solidColorControls = $('solidColorControls');
+    const speedInfo = $('speedInfo');
+    const speedModeLabel = $('speedModeLabel');
     const colorModeRadios = document.querySelectorAll('input[name="colorMode"]');
 
-    // Initialize managers
     const routeRenderer = new RouteRenderer(canvas);
     const textManager = new TextManager(textOverlay);
     const exportManager = new ExportManager(routeRenderer, textManager);
-
     let currentGPSData = null;
 
     routeRenderer.setPrintSize('a4');
     syncOverlaySize();
 
-    // --- File Upload ---
+    // --- Upload ---
     fileUploadArea.addEventListener('click', () => fileInput.click());
-
-    fileUploadArea.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        fileUploadArea.classList.add('drag-over');
-    });
-
-    fileUploadArea.addEventListener('dragleave', () => {
-        fileUploadArea.classList.remove('drag-over');
-    });
-
-    fileUploadArea.addEventListener('drop', (e) => {
+    fileUploadArea.addEventListener('dragover', e => { e.preventDefault(); fileUploadArea.classList.add('drag-over'); });
+    fileUploadArea.addEventListener('dragleave', () => fileUploadArea.classList.remove('drag-over'));
+    fileUploadArea.addEventListener('drop', e => {
         e.preventDefault();
         fileUploadArea.classList.remove('drag-over');
         if (e.dataTransfer.files.length > 0) handleFileUpload(e.dataTransfer.files[0]);
     });
-
-    fileInput.addEventListener('change', (e) => {
-        if (e.target.files[0]) handleFileUpload(e.target.files[0]);
-    });
+    fileInput.addEventListener('change', e => { if (e.target.files[0]) handleFileUpload(e.target.files[0]); });
 
     async function handleFileUpload(file) {
         try {
             showLoading(true);
             uploadFeedback.className = 'upload-feedback';
-
             const result = await GPSParser.parseFile(file);
             currentGPSData = result;
-
-            if (result.coordinates.length === 0) {
-                throw new Error('No GPS coordinates found in file');
-            }
+            if (result.coordinates.length === 0) throw new Error('No GPS coordinates found');
 
             routeRenderer.loadCoordinates(result.coordinates);
 
-            // Show/hide speed heatmap option
+            // Speed heatmap availability
             if (routeRenderer.hasTimeData) {
                 speedModeLabel.classList.remove('disabled');
                 speedModeLabel.querySelector('input').disabled = false;
-                speedModeLabel.title = '';
             } else {
                 speedModeLabel.classList.add('disabled');
                 speedModeLabel.querySelector('input').disabled = true;
-                speedModeLabel.title = 'No time data in this file';
                 if (routeRenderer.colorMode === 'speed') {
                     document.querySelector('input[name="colorMode"][value="solid"]').checked = true;
                     routeRenderer.setColorMode('solid');
@@ -92,174 +74,162 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             uploadFeedback.className = 'upload-feedback success';
-            uploadFeedback.innerHTML = `
-                <strong>${file.name}</strong><br>
-                ${result.coordinates.length} GPS points loaded${routeRenderer.hasTimeData ? ' (speed data available)' : ''}
-            `;
+            uploadFeedback.innerHTML = `<strong>${file.name}</strong> — ${result.coordinates.length} pts${routeRenderer.hasTimeData ? ' · speed' : ''}`;
 
             fileUploadArea.classList.add('file-loaded');
-            const prompt = fileUploadArea.querySelector('.upload-prompt');
-            if (prompt) {
-                prompt.querySelector('p').textContent = `${file.name} loaded — drop another file to replace`;
-            }
+            const prompt = fileUploadArea.querySelector('.upload-prompt span');
+            if (prompt) prompt.textContent = `${file.name} — drop to replace`;
 
             exportBtn.disabled = false;
-
-            // Add default text — premium layout
-            textManager.clearAll();
-            const canvasRect = canvas.getBoundingClientRect();
-
-            // Title at top
-            if (result.metadata.name) {
-                textManager.addTextElement(result.metadata.name.toUpperCase(), {
-                    y: 36, fontSize: 22, fontFamily: 'Playfair Display', alignment: 'center'
-                });
-            }
-
-            // Date below title
-            if (result.metadata.time) {
-                const opts = { year: 'numeric', month: 'long', day: 'numeric' };
-                textManager.addTextElement(result.metadata.time.toLocaleDateString(undefined, opts), {
-                    y: 62, fontSize: 11, fontFamily: 'Raleway', alignment: 'center',
-                    color: '#888888'
-                });
-            }
-
-            // Stats bar at bottom — single line: "10.5 km  ·  52:30  ·  5:00 /km"
-            const statParts = [];
-            let distKm = 0;
-            if (result.metadata.distance) {
-                distKm = result.metadata.distance / 1000;
-                statParts.push(`${distKm.toFixed(2)} km`);
-            }
-            if (result.metadata.duration) {
-                const h = Math.floor(result.metadata.duration / 3600);
-                const m = Math.floor((result.metadata.duration % 3600) / 60);
-                const s = Math.floor(result.metadata.duration % 60);
-                statParts.push(h > 0 ? `${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}` : `${m}:${String(s).padStart(2,'0')}`);
-            }
-            if (result.metadata.duration && distKm > 0) {
-                const paceSeconds = result.metadata.duration / distKm;
-                const pm = Math.floor(paceSeconds / 60);
-                const ps = Math.floor(paceSeconds % 60);
-                statParts.push(`${pm}:${String(ps).padStart(2,'0')} /km`);
-            }
-            if (statParts.length > 0) {
-                textManager.addTextElement(statParts.join('   ·   '), {
-                    y: canvasRect.height - 32, fontSize: 11, fontFamily: 'Montserrat', alignment: 'center',
-                    color: '#888888'
-                });
-            }
-
+            buildDefaultText(result);
             syncOverlaySize();
         } catch (error) {
             uploadFeedback.className = 'upload-feedback error';
-            uploadFeedback.textContent = `Error: ${error.message}`;
-            console.error('File upload error:', error);
+            uploadFeedback.textContent = error.message;
         } finally {
             showLoading(false);
         }
+    }
+
+    function buildDefaultText(result) {
+        textManager.clearAll();
+        const rc = routeRenderer.routeColor;
+        const canvasH = canvas.getBoundingClientRect().height;
+
+        if (result.metadata.name) {
+            textManager.addTextElement(result.metadata.name.toUpperCase(), {
+                y: 36, fontSize: 22, fontFamily: 'Playfair Display', alignment: 'center', color: rc
+            });
+        }
+        if (result.metadata.time) {
+            const opts = { year: 'numeric', month: 'long', day: 'numeric' };
+            textManager.addTextElement(result.metadata.time.toLocaleDateString(undefined, opts), {
+                y: 62, fontSize: 11, fontFamily: 'Raleway', alignment: 'center', color: rc
+            });
+        }
+        const parts = [];
+        let distKm = 0;
+        if (result.metadata.distance) {
+            distKm = result.metadata.distance / 1000;
+            parts.push(`${distKm.toFixed(2)} km`);
+        }
+        if (result.metadata.duration) {
+            const h = Math.floor(result.metadata.duration / 3600);
+            const m = Math.floor((result.metadata.duration % 3600) / 60);
+            const s = Math.floor(result.metadata.duration % 60);
+            parts.push(h > 0 ? `${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}` : `${m}:${String(s).padStart(2,'0')}`);
+        }
+        if (result.metadata.duration && distKm > 0) {
+            const ps = result.metadata.duration / distKm;
+            parts.push(`${Math.floor(ps/60)}:${String(Math.floor(ps%60)).padStart(2,'0')} /km`);
+        }
+        if (parts.length > 0) {
+            textManager.addTextElement(parts.join('   ·   '), {
+                y: canvasH - 32, fontSize: 11, fontFamily: 'Montserrat', alignment: 'center', color: rc
+            });
+        }
+    }
+
+    // Update all text element colors to match the route color
+    function syncTextColors(color) {
+        textManager.getTextElements().forEach(el => {
+            textManager.updateTextElement(el.id, { color });
+        });
     }
 
     function showLoading(show) {
         if (loadingOverlay) loadingOverlay.style.display = show ? 'flex' : 'none';
     }
 
-    // --- Print Size ---
-    printSizeSelect.addEventListener('change', (e) => {
-        routeRenderer.setPrintSize(e.target.value);
-        syncOverlaySize();
-    });
-
-    // --- Orientation ---
+    // --- Page ---
+    printSizeSelect.addEventListener('change', e => { routeRenderer.setPrintSize(e.target.value); syncOverlaySize(); });
     orientationBtn.addEventListener('click', () => {
-        const newOrientation = routeRenderer.orientation === 'portrait' ? 'landscape' : 'portrait';
-        routeRenderer.setOrientation(newOrientation);
-        orientationBtn.textContent = newOrientation === 'portrait' ? 'Portrait' : 'Landscape';
-        orientationBtn.title = `Switch to ${newOrientation === 'portrait' ? 'landscape' : 'portrait'}`;
+        const o = routeRenderer.orientation === 'portrait' ? 'landscape' : 'portrait';
+        routeRenderer.setOrientation(o);
+        orientationBtn.textContent = o === 'portrait' ? 'Portrait' : 'Landscape';
         syncOverlaySize();
     });
 
     // --- Color Mode ---
-    colorModeRadios.forEach(radio => {
-        radio.addEventListener('change', (e) => {
-            const mode = e.target.value;
-            routeRenderer.setColorMode(mode);
-            solidColorControls.style.display = mode === 'speed' ? 'none' : '';
-            speedInfo.style.display = mode === 'speed' ? '' : 'none';
-        });
-    });
+    colorModeRadios.forEach(r => r.addEventListener('change', e => {
+        routeRenderer.setColorMode(e.target.value);
+        solidColorControls.style.display = e.target.value === 'speed' ? 'none' : '';
+        speedInfo.style.display = e.target.value === 'speed' ? '' : 'none';
+    }));
 
     // --- Colors ---
-    routeColorInput.addEventListener('change', (e) => {
-        routeRenderer.setColors(e.target.value, backgroundColorInput.value);
-    });
-    backgroundColorInput.addEventListener('change', (e) => {
+    routeColorInput.addEventListener('change', e => routeRenderer.setColors(e.target.value, backgroundColorInput.value));
+    backgroundColorInput.addEventListener('change', e => {
         routeRenderer.setColors(routeColorInput.value, e.target.value);
         backgroundColor2Input.value = e.target.value;
     });
-    backgroundColor2Input.addEventListener('change', (e) => {
+    backgroundColor2Input.addEventListener('change', e => {
         routeRenderer.backgroundColor = e.target.value;
         backgroundColorInput.value = e.target.value;
         if (routeRenderer.coordinates.length > 0) routeRenderer.render();
     });
 
-    // --- Heatmap Colors ---
-    heatSlowInput.addEventListener('change', (e) => routeRenderer.setHeatmapColor('slow', e.target.value));
-    heatMediumInput.addEventListener('change', (e) => routeRenderer.setHeatmapColor('medium', e.target.value));
-    heatFastInput.addEventListener('change', (e) => routeRenderer.setHeatmapColor('fast', e.target.value));
+    heatSlowInput.addEventListener('change', e => routeRenderer.setHeatmapColor('slow', e.target.value));
+    heatMediumInput.addEventListener('change', e => routeRenderer.setHeatmapColor('medium', e.target.value));
+    heatFastInput.addEventListener('change', e => routeRenderer.setHeatmapColor('fast', e.target.value));
 
-    document.querySelectorAll('.preset-btn').forEach(btn => {
+    // --- Presets ---
+    document.querySelectorAll('.preset-dot').forEach(btn => {
         btn.addEventListener('click', () => {
+            // Activate visual state
+            document.querySelectorAll('.preset-dot').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+
+            // Switch to solid mode
             document.querySelector('input[name="colorMode"][value="solid"]').checked = true;
             routeRenderer.setColorMode('solid');
             solidColorControls.style.display = '';
             speedInfo.style.display = 'none';
 
-            routeColorInput.value = btn.dataset.route;
-            backgroundColorInput.value = btn.dataset.bg;
-            backgroundColor2Input.value = btn.dataset.bg;
-            routeRenderer.setColors(btn.dataset.route, btn.dataset.bg);
+            const rc = btn.dataset.route;
+            const bg = btn.dataset.bg;
+            routeColorInput.value = rc;
+            backgroundColorInput.value = bg;
+            backgroundColor2Input.value = bg;
+            routeRenderer.setColors(rc, bg);
+
+            // Sync text colors to match theme
+            syncTextColors(rc);
         });
     });
 
-    // --- Line Width ---
-    lineWidthSlider.addEventListener('input', (e) => {
-        const w = parseFloat(e.target.value);
-        lineWidthValue.textContent = `${w}px`;
-        routeRenderer.setLineWidth(w);
+    // --- Route Controls ---
+    lineWidthSlider.addEventListener('input', e => {
+        lineWidthValue.textContent = e.target.value;
+        routeRenderer.setLineWidth(parseFloat(e.target.value));
     });
-
-    // --- Line Style ---
-    lineStyleSelect.addEventListener('change', (e) => routeRenderer.setLineStyle(e.target.value));
-
-    // --- Smoothing ---
-    smoothingSlider.addEventListener('input', (e) => {
+    lineStyleSelect.addEventListener('change', e => routeRenderer.setLineStyle(e.target.value));
+    smoothingSlider.addEventListener('input', e => {
         const v = parseFloat(e.target.value);
-        smoothingValue.textContent = v === 0 ? 'Off' : `${Math.round(v * 100)}%`;
+        smoothingValue.textContent = v === 0 ? 'Off' : `${Math.round(v*100)}%`;
         routeRenderer.setSmoothing(v);
+    });
+    showMarkerToggle.addEventListener('change', e => {
+        routeRenderer.showStartMarker = e.target.checked;
+        if (routeRenderer.coordinates.length > 0) routeRenderer.render();
     });
 
     // --- Text ---
     addTextBtn.addEventListener('click', () => {
-        const canvasRect = canvas.getBoundingClientRect();
         textManager.addTextElement('Custom Text', {
-            y: canvasRect.height / 2,
-            fontSize: 20,
-            fontFamily: 'Montserrat',
-            alignment: 'center'
+            y: canvas.getBoundingClientRect().height / 2,
+            fontSize: 16, fontFamily: 'Montserrat', alignment: 'center',
+            color: routeRenderer.routeColor
         });
     });
 
     // --- Export ---
     exportBtn.addEventListener('click', async () => {
-        const format = exportFormat.value;
-        const filename = currentGPSData?.metadata?.name || 'lineart-map';
+        const name = currentGPSData?.metadata?.name || 'lineart-map';
         try {
-            await exportManager.exportImage(format, filename.replace(/[^a-z0-9]/gi, '_'));
-        } catch (error) {
-            console.error('Export error:', error);
-            alert('Export failed. Please try a different format.');
+            await exportManager.exportImage(exportFormat.value, name.replace(/[^a-z0-9]/gi, '_'));
+        } catch (e) {
+            alert('Export failed. Try a different format.');
         }
     });
 
@@ -271,29 +241,27 @@ document.addEventListener('DOMContentLoaded', () => {
         routeRenderer.speeds = [];
         routeRenderer.hasTimeData = false;
         routeRenderer.colorMode = 'solid';
+        routeRenderer.showStartMarker = true;
 
         const size = routeRenderer.getSize();
         const ctx = canvas.getContext('2d');
-        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.setTransform(1,0,0,1,0,0);
         ctx.scale(routeRenderer.canvasScale, routeRenderer.canvasScale);
-        ctx.fillStyle = '#FFFFFF';
+        ctx.fillStyle = '#F5F0E8';
         ctx.fillRect(0, 0, size.width, size.height);
 
         textManager.clearAll();
         exportBtn.disabled = true;
-
         fileUploadArea.classList.remove('file-loaded');
-        const prompt = fileUploadArea.querySelector('.upload-prompt');
-        if (prompt) prompt.querySelector('p').textContent = 'Drag & drop your GPS file here or click to browse';
+        const prompt = fileUploadArea.querySelector('.upload-prompt span');
+        if (prompt) prompt.innerHTML = 'Drop GPS file or <u>browse</u>';
         uploadFeedback.className = 'upload-feedback';
-        uploadFeedback.textContent = '';
         fileInput.value = '';
 
         document.querySelector('input[name="colorMode"][value="solid"]').checked = true;
         solidColorControls.style.display = '';
         speedInfo.style.display = 'none';
-        speedModeLabel.classList.remove('disabled');
-        speedModeLabel.querySelector('input').disabled = false;
+        document.querySelectorAll('.preset-dot').forEach(b => b.classList.remove('active'));
 
         routeColorInput.value = '#1B2A4A';
         backgroundColorInput.value = '#F5F0E8';
@@ -301,27 +269,22 @@ document.addEventListener('DOMContentLoaded', () => {
         heatSlowInput.value = '#0000FF';
         heatMediumInput.value = '#00FF00';
         heatFastInput.value = '#FF0000';
-        routeRenderer.heatmapColors = { slow: [0,0,255], medium: [0,255,0], fast: [255,0,0] };
+        routeRenderer.heatmapColors = { slow:[0,0,255], medium:[0,255,0], fast:[255,0,0] };
         routeRenderer.setColors('#1B2A4A', '#F5F0E8');
-        lineWidthSlider.value = '2.5';
-        lineWidthValue.textContent = '2.5px';
+        lineWidthSlider.value = '2.5'; lineWidthValue.textContent = '2.5';
         lineStyleSelect.value = 'solid';
-        smoothingSlider.value = '0.3';
-        smoothingValue.textContent = '30%';
+        smoothingSlider.value = '0.3'; smoothingValue.textContent = '30%';
+        showMarkerToggle.checked = true;
     });
 
     // --- Resize ---
     function syncOverlaySize() {
         requestAnimationFrame(() => {
-            const rect = canvas.getBoundingClientRect();
-            textOverlay.style.width = `${rect.width}px`;
-            textOverlay.style.height = `${rect.height}px`;
+            const r = canvas.getBoundingClientRect();
+            textOverlay.style.width = `${r.width}px`;
+            textOverlay.style.height = `${r.height}px`;
         });
     }
-
-    let resizeTimer;
-    window.addEventListener('resize', () => {
-        clearTimeout(resizeTimer);
-        resizeTimer = setTimeout(syncOverlaySize, 100);
-    });
+    let rt;
+    window.addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(syncOverlaySize, 100); });
 });

@@ -28,6 +28,7 @@ class RouteRenderer {
         this.speeds = [];
         this.speedRange = { min: 0, max: 1 };
         this.hasTimeData = false;
+        this.showStartMarker = true;
         // Heatmap colors as [r,g,b] arrays
         this.heatmapColors = {
             slow: [0, 0, 255],
@@ -328,7 +329,7 @@ class RouteRenderer {
         ctx.globalAlpha = 1;
 
         // Start marker — small filled circle
-        if (this.bounds && this.coordinates.length > 0) {
+        if (this.showStartMarker && this.bounds && this.coordinates.length > 0) {
             const start = this.latLonToCanvas(this.coordinates[0].lat, this.coordinates[0].lon, size);
             const markerColor = this.colorMode === 'speed' && this.hasTimeData
                 ? this.speedToColor(this.speeds[0] || 0)

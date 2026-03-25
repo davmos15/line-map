@@ -20,157 +20,135 @@
 
         <main>
             <div class="controls-panel">
-                <section class="file-upload-section">
-                    <h2>Upload GPS File</h2>
+                <!-- Upload -->
+                <section>
                     <div class="file-upload-area" id="fileUploadArea">
                         <input type="file" id="fileInput" accept=".gpx,.tcx,.fit" hidden>
                         <div class="upload-prompt">
-                            <svg class="upload-icon" viewBox="0 0 24 24" width="48" height="48">
-                                <path d="M9 16h6v-6h4l-7-7-7 7h4v6zm-4 2h14v2H5v-2z" fill="currentColor"/>
-                            </svg>
-                            <p>Drag & drop your GPS file here or click to browse</p>
-                            <p class="file-types">Supported: GPX, TCX, FIT</p>
+                            <svg viewBox="0 0 24 24" width="20" height="20"><path d="M9 16h6v-6h4l-7-7-7 7h4v6zm-4 2h14v2H5v-2z" fill="currentColor"/></svg>
+                            <span>Drop GPS file or <u>browse</u></span>
+                            <small>GPX · TCX · FIT</small>
                         </div>
                     </div>
                     <div id="uploadFeedback" class="upload-feedback"></div>
                 </section>
 
-                <section class="print-size-section">
-                    <h2>Page Setup</h2>
-                    <div class="page-setup-row">
-                        <select id="printSize" class="print-size-select">
-                            <option value="a5">A5 (148 x 210 mm)</option>
-                            <option value="a4" selected>A4 (210 x 297 mm)</option>
-                            <option value="a3">A3 (297 x 420 mm)</option>
-                            <option value="a2">A2 (420 x 594 mm)</option>
-                            <option value="a1">A1 (594 x 841 mm)</option>
-                            <option value="a0">A0 (841 x 1189 mm)</option>
+                <div class="divider"></div>
+
+                <!-- Page -->
+                <section>
+                    <label class="section-label">Page</label>
+                    <div class="row">
+                        <select id="printSize" class="ctrl-select">
+                            <option value="a5">A5</option>
+                            <option value="a4" selected>A4</option>
+                            <option value="a3">A3</option>
+                            <option value="a2">A2</option>
+                            <option value="a1">A1</option>
+                            <option value="a0">A0</option>
                         </select>
-                        <button id="orientationBtn" class="orientation-btn" title="Switch to landscape">Portrait</button>
+                        <button id="orientationBtn" class="ctrl-btn" title="Toggle orientation">Portrait</button>
                     </div>
                 </section>
 
-                <section class="color-section">
-                    <h2>Colors</h2>
-                    <div class="color-mode-row">
-                        <label class="color-mode-option">
-                            <input type="radio" name="colorMode" value="solid" checked> Solid Color
-                        </label>
-                        <label class="color-mode-option" id="speedModeLabel">
-                            <input type="radio" name="colorMode" value="speed"> Speed Heatmap
-                        </label>
+                <div class="divider"></div>
+
+                <!-- Theme -->
+                <section>
+                    <label class="section-label">Theme</label>
+                    <div class="row" style="margin-bottom:0.5rem">
+                        <label class="radio-label"><input type="radio" name="colorMode" value="solid" checked> Solid</label>
+                        <label class="radio-label" id="speedModeLabel"><input type="radio" name="colorMode" value="speed"> Heatmap</label>
                     </div>
+
                     <div id="solidColorControls">
-                    <div class="color-controls">
-                        <div class="color-control">
-                            <label for="routeColor">Route Line</label>
-                            <input type="color" id="routeColor" value="#1B2A4A">
+                        <div class="preset-grid">
+                            <button class="preset-dot" data-route="#1B2A4A" data-bg="#F5F0E8" title="Navy on Cream"><span style="background:linear-gradient(135deg,#F5F0E8 50%,#1B2A4A 50%)"></span></button>
+                            <button class="preset-dot" data-route="#000000" data-bg="#FFFFFF" title="Black on White"><span style="background:linear-gradient(135deg,#FFFFFF 50%,#000000 50%)"></span></button>
+                            <button class="preset-dot" data-route="#FFFFFF" data-bg="#000000" title="White on Black"><span style="background:linear-gradient(135deg,#000000 50%,#FFFFFF 50%)"></span></button>
+                            <button class="preset-dot" data-route="#C9A84C" data-bg="#1A1A1A" title="Gold on Black"><span style="background:linear-gradient(135deg,#1A1A1A 50%,#C9A84C 50%)"></span></button>
+                            <button class="preset-dot" data-route="#2D5016" data-bg="#FFFFFF" title="Forest on White"><span style="background:linear-gradient(135deg,#FFFFFF 50%,#2D5016 50%)"></span></button>
+                            <button class="preset-dot" data-route="#E8715A" data-bg="#2C2C2C" title="Coral on Dark"><span style="background:linear-gradient(135deg,#2C2C2C 50%,#E8715A 50%)"></span></button>
+                            <button class="preset-dot" data-route="#4ECDC4" data-bg="#1A535C" title="Teal on Dark"><span style="background:linear-gradient(135deg,#1A535C 50%,#4ECDC4 50%)"></span></button>
+                            <button class="preset-dot" data-route="#8B5E3C" data-bg="#FDF6EC" title="Espresso on Linen"><span style="background:linear-gradient(135deg,#FDF6EC 50%,#8B5E3C 50%)"></span></button>
+                            <button class="preset-dot" data-route="#E6E6E6" data-bg="#1C1C1C" title="Silver on Charcoal"><span style="background:linear-gradient(135deg,#1C1C1C 50%,#E6E6E6 50%)"></span></button>
+                            <button class="preset-dot" data-route="#FF6B6B" data-bg="#F7F7F7" title="Red on Light"><span style="background:linear-gradient(135deg,#F7F7F7 50%,#FF6B6B 50%)"></span></button>
                         </div>
-                        <div class="color-control">
-                            <label for="backgroundColor">Background</label>
-                            <input type="color" id="backgroundColor" value="#F5F0E8">
-                        </div>
-                    </div>
-                    <div class="color-presets">
-                        <button class="preset-btn" data-route="#000000" data-bg="#FFFFFF" title="Black on White">
-                            <span class="preset-swatch" style="background:#FFFFFF;color:#000000">A</span>
-                        </button>
-                        <button class="preset-btn" data-route="#FFFFFF" data-bg="#000000" title="White on Black">
-                            <span class="preset-swatch" style="background:#000000;color:#FFFFFF">A</span>
-                        </button>
-                        <button class="preset-btn" data-route="#1B2A4A" data-bg="#F5F0E8" title="Navy on Cream">
-                            <span class="preset-swatch" style="background:#F5F0E8;color:#1B2A4A">A</span>
-                        </button>
-                        <button class="preset-btn" data-route="#C9A84C" data-bg="#1A1A1A" title="Gold on Black">
-                            <span class="preset-swatch" style="background:#1A1A1A;color:#C9A84C">A</span>
-                        </button>
-                        <button class="preset-btn" data-route="#2D5016" data-bg="#FFFFFF" title="Forest Green on White">
-                            <span class="preset-swatch" style="background:#FFFFFF;color:#2D5016">A</span>
-                        </button>
-                        <button class="preset-btn" data-route="#E8715A" data-bg="#2C2C2C" title="Coral on Dark Gray">
-                            <span class="preset-swatch" style="background:#2C2C2C;color:#E8715A">A</span>
-                        </button>
-                        <button class="preset-btn" data-route="#FF6B6B" data-bg="#F7F7F7" title="Red on Light">
-                            <span class="preset-swatch" style="background:#F7F7F7;color:#FF6B6B">A</span>
-                        </button>
-                        <button class="preset-btn" data-route="#4ECDC4" data-bg="#1A535C" title="Teal on Dark">
-                            <span class="preset-swatch" style="background:#1A535C;color:#4ECDC4">A</span>
-                        </button>
-                        <button class="preset-btn" data-route="#8B5E3C" data-bg="#FDF6EC" title="Espresso on Linen">
-                            <span class="preset-swatch" style="background:#FDF6EC;color:#8B5E3C">A</span>
-                        </button>
-                        <button class="preset-btn" data-route="#E6E6E6" data-bg="#1C1C1C" title="Silver on Charcoal">
-                            <span class="preset-swatch" style="background:#1C1C1C;color:#E6E6E6">A</span>
-                        </button>
-                    </div>
-                    </div>
-                    <div id="speedInfo" class="speed-info" style="display:none">
-                        <div class="heatmap-colors">
-                            <div class="color-control">
-                                <label for="heatSlow">Slow</label>
-                                <input type="color" id="heatSlow" value="#0000FF">
+                        <div class="row" style="margin-top:0.5rem">
+                            <div class="color-pair">
+                                <label>Line</label>
+                                <input type="color" id="routeColor" value="#1B2A4A">
                             </div>
-                            <div class="color-control">
-                                <label for="heatMedium">Medium</label>
-                                <input type="color" id="heatMedium" value="#00FF00">
-                            </div>
-                            <div class="color-control">
-                                <label for="heatFast">Fast</label>
-                                <input type="color" id="heatFast" value="#FF0000">
+                            <div class="color-pair">
+                                <label>Background</label>
+                                <input type="color" id="backgroundColor" value="#F5F0E8">
                             </div>
                         </div>
-                        <div class="color-control" style="margin-top:0.5rem">
-                            <label for="backgroundColor2">Background</label>
-                            <input type="color" id="backgroundColor2" value="#FFFFFF">
+                    </div>
+
+                    <div id="speedInfo" style="display:none">
+                        <div class="row">
+                            <div class="color-pair"><label>Slow</label><input type="color" id="heatSlow" value="#0000FF"></div>
+                            <div class="color-pair"><label>Med</label><input type="color" id="heatMedium" value="#00FF00"></div>
+                            <div class="color-pair"><label>Fast</label><input type="color" id="heatFast" value="#FF0000"></div>
+                            <div class="color-pair"><label>BG</label><input type="color" id="backgroundColor2" value="#F5F0E8"></div>
                         </div>
                     </div>
                 </section>
 
-                <section class="line-section">
-                    <h2>Line Style</h2>
-                    <div class="line-control">
-                        <label for="lineWidth">Width</label>
-                        <div class="slider-row">
-                            <input type="range" id="lineWidth" min="0.5" max="6" step="0.5" value="2.5">
-                            <span id="lineWidthValue">2.5px</span>
-                        </div>
+                <div class="divider"></div>
+
+                <!-- Route -->
+                <section>
+                    <label class="section-label">Route</label>
+                    <div class="ctrl-row">
+                        <span class="ctrl-label">Width</span>
+                        <input type="range" id="lineWidth" min="0.5" max="6" step="0.5" value="2.5" class="ctrl-range">
+                        <span id="lineWidthValue" class="ctrl-val">2.5</span>
                     </div>
-                    <div class="line-control">
-                        <label for="lineStyle">Style</label>
-                        <select id="lineStyle">
+                    <div class="ctrl-row">
+                        <span class="ctrl-label">Smooth</span>
+                        <input type="range" id="smoothing" min="0" max="1" step="0.1" value="0.3" class="ctrl-range">
+                        <span id="smoothingValue" class="ctrl-val">30%</span>
+                    </div>
+                    <div class="ctrl-row">
+                        <span class="ctrl-label">Style</span>
+                        <select id="lineStyle" class="ctrl-select-sm">
                             <option value="solid">Solid</option>
                             <option value="dashed">Dashed</option>
                             <option value="dotted">Dotted</option>
                         </select>
                     </div>
-                    <div class="line-control">
-                        <label for="smoothing">Smoothing</label>
-                        <div class="slider-row">
-                            <input type="range" id="smoothing" min="0" max="1" step="0.1" value="0.3">
-                            <span id="smoothingValue">30%</span>
-                        </div>
+                    <div class="ctrl-row">
+                        <span class="ctrl-label">Start marker</span>
+                        <label class="toggle"><input type="checkbox" id="showMarker" checked><span class="toggle-slider"></span></label>
                     </div>
                 </section>
 
-                <section class="text-section">
-                    <h2>Text Elements</h2>
-                    <div class="text-controls">
-                        <button id="addTextBtn" class="add-text-btn">+ Add Text</button>
-                        <div id="textElements" class="text-elements-list"></div>
+                <div class="divider"></div>
+
+                <!-- Text -->
+                <section>
+                    <div class="row" style="align-items:center">
+                        <label class="section-label" style="margin-bottom:0">Text</label>
+                        <button id="addTextBtn" class="btn-sm">+ Add</button>
                     </div>
+                    <div id="textElements" class="text-elements-list"></div>
                 </section>
 
-                <section class="export-section">
-                    <h2>Export</h2>
-                    <div class="export-row">
-                        <button id="exportBtn" class="export-btn" disabled>Download</button>
-                        <select id="exportFormat" class="export-format">
+                <div class="divider"></div>
+
+                <!-- Export -->
+                <section>
+                    <div class="row">
+                        <button id="exportBtn" class="btn-primary" disabled>Download</button>
+                        <select id="exportFormat" class="ctrl-select-sm">
                             <option value="png">PNG</option>
                             <option value="svg">SVG</option>
                             <option value="pdf">PDF</option>
                         </select>
                     </div>
-                    <button id="resetBtn" class="reset-btn">Reset</button>
+                    <button id="resetBtn" class="btn-ghost">Reset all</button>
                 </section>
             </div>
 
@@ -180,7 +158,7 @@
                     <div id="textOverlay" class="text-overlay"></div>
                     <div id="loadingOverlay" class="loading-overlay" style="display:none">
                         <div class="spinner"></div>
-                        <p>Processing GPS file...</p>
+                        <p>Processing...</p>
                     </div>
                 </div>
             </div>
