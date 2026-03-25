@@ -68,7 +68,8 @@ class ExportManager {
         ctx.fillStyle = this.routeRenderer.backgroundColor;
         ctx.fillRect(0, 0, size.width, size.height);
 
-        // Re-render route directly at export resolution (no drawImage scaling issue)
+        // Decorations and route
+        this.routeRenderer.renderDecorations(ctx, size);
         this.routeRenderer.renderRoute(ctx, size);
 
         // Draw text elements (converted from pixel-space to mm-space)
@@ -102,6 +103,20 @@ class ExportManager {
         rect.setAttribute('height', size.height);
         rect.setAttribute('fill', this.routeRenderer.backgroundColor);
         svg.appendChild(rect);
+
+        // Inner border frame
+        const rr0 = this.routeRenderer;
+        const margin = 10;
+        const borderRect = document.createElementNS(ns, 'rect');
+        borderRect.setAttribute('x', margin);
+        borderRect.setAttribute('y', margin);
+        borderRect.setAttribute('width', size.width - 2 * margin);
+        borderRect.setAttribute('height', size.height - 2 * margin);
+        borderRect.setAttribute('fill', 'none');
+        borderRect.setAttribute('stroke', rr0.colorMode === 'speed' ? 'rgba(120,120,120,0.25)' : rr0.routeColor);
+        borderRect.setAttribute('stroke-width', '0.4');
+        borderRect.setAttribute('opacity', rr0.colorMode === 'speed' ? '1' : '0.15');
+        svg.appendChild(borderRect);
 
         // Route path
         if (this.routeRenderer.coordinates.length > 0) {
@@ -186,6 +201,17 @@ class ExportManager {
                 if (dashAttr) path.setAttribute('stroke-dasharray', dashAttr);
                 svg.appendChild(path);
             }
+
+            // Start marker
+            const startPt = points[0];
+            const markerColor = rr.colorMode === 'speed' && rr.hasTimeData
+                ? rr.speedToColor(rr.speeds[0] || 0) : rr.routeColor;
+            const marker = document.createElementNS(ns, 'circle');
+            marker.setAttribute('cx', startPt.x);
+            marker.setAttribute('cy', startPt.y);
+            marker.setAttribute('r', rr.lineWidth * 1.8);
+            marker.setAttribute('fill', markerColor);
+            svg.appendChild(marker);
         }
 
         // Text elements (converted to mm-space)

@@ -14,14 +14,14 @@ class RouteRenderer {
         this.ctx = canvas.getContext('2d');
         this.coordinates = [];
         this.bounds = null;
-        this.padding = 40;
-        this.lineWidth = 2;
-        this.routeColor = '#000000';
-        this.backgroundColor = '#FFFFFF';
+        this.padding = 55;
+        this.lineWidth = 2.5;
+        this.routeColor = '#1B2A4A';
+        this.backgroundColor = '#F5F0E8';
         this.printSize = 'a4';
         this.orientation = 'portrait';
         this.lineStyle = 'solid';
-        this.smoothing = 0;
+        this.smoothing = 0.3;
         this.displayScale = 2;
         this.canvasScale = 3;
         this.colorMode = 'solid';
@@ -316,6 +316,30 @@ class RouteRenderer {
         }
     }
 
+    // Draw inner border frame and start marker
+    renderDecorations(ctx, size) {
+        // Inner border — thin elegant frame
+        const margin = 10;
+        ctx.strokeStyle = this.colorMode === 'speed' ? 'rgba(120,120,120,0.25)' : this.routeColor;
+        ctx.globalAlpha = this.colorMode === 'speed' ? 1 : 0.15;
+        ctx.lineWidth = 0.4;
+        ctx.setLineDash([]);
+        ctx.strokeRect(margin, margin, size.width - 2 * margin, size.height - 2 * margin);
+        ctx.globalAlpha = 1;
+
+        // Start marker — small filled circle
+        if (this.bounds && this.coordinates.length > 0) {
+            const start = this.latLonToCanvas(this.coordinates[0].lat, this.coordinates[0].lon, size);
+            const markerColor = this.colorMode === 'speed' && this.hasTimeData
+                ? this.speedToColor(this.speeds[0] || 0)
+                : this.routeColor;
+            ctx.fillStyle = markerColor;
+            ctx.beginPath();
+            ctx.arc(start.x, start.y, this.lineWidth * 1.8, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    }
+
     render() {
         if (!this.bounds || this.coordinates.length === 0) return;
         const size = this.getSize();
@@ -326,6 +350,7 @@ class RouteRenderer {
         this.ctx.fillStyle = this.backgroundColor;
         this.ctx.fillRect(0, 0, size.width, size.height);
 
+        this.renderDecorations(this.ctx, size);
         this.renderRoute(this.ctx, size);
     }
 }

@@ -105,33 +105,49 @@ document.addEventListener('DOMContentLoaded', () => {
 
             exportBtn.disabled = false;
 
-            // Add default text elements from metadata
+            // Add default text — premium layout
             textManager.clearAll();
+            const canvasRect = canvas.getBoundingClientRect();
 
+            // Title at top
             if (result.metadata.name) {
-                textManager.addTextElement(result.metadata.name, {
-                    y: 50, fontSize: 24, fontFamily: 'Playfair Display', alignment: 'center'
+                textManager.addTextElement(result.metadata.name.toUpperCase(), {
+                    y: 36, fontSize: 22, fontFamily: 'Playfair Display', alignment: 'center'
                 });
             }
 
+            // Date below title
             if (result.metadata.time) {
-                textManager.addTextElement(result.metadata.time.toLocaleDateString(), {
-                    y: 80, fontSize: 16, fontFamily: 'Montserrat', alignment: 'center'
+                const opts = { year: 'numeric', month: 'long', day: 'numeric' };
+                textManager.addTextElement(result.metadata.time.toLocaleDateString(undefined, opts), {
+                    y: 62, fontSize: 11, fontFamily: 'Raleway', alignment: 'center',
+                    color: '#888888'
                 });
             }
 
+            // Stats bar at bottom — single line: "10.5 km  ·  52:30  ·  5:00 /km"
+            const statParts = [];
+            let distKm = 0;
             if (result.metadata.distance) {
-                const distKm = (result.metadata.distance / 1000).toFixed(2);
-                textManager.addTextElement(`${distKm} km`, {
-                    y: 110, fontSize: 16, fontFamily: 'Montserrat', alignment: 'center'
-                });
+                distKm = result.metadata.distance / 1000;
+                statParts.push(`${distKm.toFixed(2)} km`);
             }
-
             if (result.metadata.duration) {
                 const h = Math.floor(result.metadata.duration / 3600);
                 const m = Math.floor((result.metadata.duration % 3600) / 60);
-                textManager.addTextElement(h > 0 ? `${h}h ${m}m` : `${m}m`, {
-                    y: 140, fontSize: 16, fontFamily: 'Montserrat', alignment: 'center'
+                const s = Math.floor(result.metadata.duration % 60);
+                statParts.push(h > 0 ? `${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}` : `${m}:${String(s).padStart(2,'0')}`);
+            }
+            if (result.metadata.duration && distKm > 0) {
+                const paceSeconds = result.metadata.duration / distKm;
+                const pm = Math.floor(paceSeconds / 60);
+                const ps = Math.floor(paceSeconds % 60);
+                statParts.push(`${pm}:${String(ps).padStart(2,'0')} /km`);
+            }
+            if (statParts.length > 0) {
+                textManager.addTextElement(statParts.join('   ·   '), {
+                    y: canvasRect.height - 32, fontSize: 11, fontFamily: 'Montserrat', alignment: 'center',
+                    color: '#888888'
                 });
             }
 
@@ -279,19 +295,19 @@ document.addEventListener('DOMContentLoaded', () => {
         speedModeLabel.classList.remove('disabled');
         speedModeLabel.querySelector('input').disabled = false;
 
-        routeColorInput.value = '#000000';
-        backgroundColorInput.value = '#FFFFFF';
-        backgroundColor2Input.value = '#FFFFFF';
+        routeColorInput.value = '#1B2A4A';
+        backgroundColorInput.value = '#F5F0E8';
+        backgroundColor2Input.value = '#F5F0E8';
         heatSlowInput.value = '#0000FF';
         heatMediumInput.value = '#00FF00';
         heatFastInput.value = '#FF0000';
         routeRenderer.heatmapColors = { slow: [0,0,255], medium: [0,255,0], fast: [255,0,0] };
-        routeRenderer.setColors('#000000', '#FFFFFF');
-        lineWidthSlider.value = '2';
-        lineWidthValue.textContent = '2px';
+        routeRenderer.setColors('#1B2A4A', '#F5F0E8');
+        lineWidthSlider.value = '2.5';
+        lineWidthValue.textContent = '2.5px';
         lineStyleSelect.value = 'solid';
-        smoothingSlider.value = '0';
-        smoothingValue.textContent = 'Off';
+        smoothingSlider.value = '0.3';
+        smoothingValue.textContent = '30%';
     });
 
     // --- Resize ---
