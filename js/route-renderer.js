@@ -448,6 +448,18 @@ class RouteRenderer {
         const dark = this._isDarkBackground();
         const key_suffix = dark ? 'd' : 'l';
 
+        // Draw tiles to a temp canvas so we can boost contrast
+        const tmpCanvas = document.createElement('canvas');
+        tmpCanvas.width = size.width * 3;
+        tmpCanvas.height = size.height * 3;
+        const tmp = tmpCanvas.getContext('2d');
+        tmp.scale(3, 3);
+
+        // Fill with background first
+        tmp.fillStyle = this.backgroundColor;
+        tmp.fillRect(0, 0, size.width, size.height);
+
+        // Draw tiles
         for (let tx = minX; tx <= maxX; tx++) {
             for (let ty = minY; ty <= maxY; ty++) {
                 const tile = this._tileCache[`${zoom}/${tx}/${ty}/${key_suffix}`];
@@ -456,15 +468,41 @@ class RouteRenderer {
                 const br = this._tileToLatLon(tx + 1, ty + 1, zoom);
                 const p1 = this.latLonToCanvas(tl.lat, tl.lon, size);
                 const p2 = this.latLonToCanvas(br.lat, br.lon, size);
-                ctx.drawImage(tile, p1.x, p1.y, p2.x - p1.x, p2.y - p1.y);
+                tmp.drawImage(tile, p1.x, p1.y, p2.x - p1.x, p2.y - p1.y);
             }
         }
-        // Wash with background color — mapOpacity controls how much map shows through
-        // wash = 1 - mapOpacity (high opacity = less wash = more map visible)
-        ctx.globalAlpha = 1 - this.mapOpacity;
-        ctx.fillStyle = this.backgroundColor;
-        ctx.fillRect(0, 0, size.width, size.height);
-        ctx.globalAlpha = 1;
+
+        // At high opacity, overdraw tiles with multiply blend to darken streets
+        if (this.mapOpacity > 0.5) {
+            const boost = (this.mapOpacity - 0.5) * 2; // 0 at 50%, 1 at 100%
+            tmp.globalCompositeOperation = 'multiply';
+            tmp.globalAlpha = boost * 0.6;
+            for (let tx = minX; tx <= maxX; tx++) {
+                for (let ty = minY; ty <= maxY; ty++) {
+                    const tile = this._tileCache[`${zoom}/${tx}/${ty}/${key_suffix}`];
+                    if (!tile) continue;
+                    const tl = this._tileToLatLon(tx, ty, zoom);
+                    const br = this._tileToLatLon(tx + 1, ty + 1, zoom);
+                    const p1 = this.latLonToCanvas(tl.lat, tl.lon, size);
+                    const p2 = this.latLonToCanvas(br.lat, br.lon, size);
+                    tmp.drawImage(tile, p1.x, p1.y, p2.x - p1.x, p2.y - p1.y);
+                }
+            }
+            tmp.globalCompositeOperation = 'source-over';
+            tmp.globalAlpha = 1;
+        }
+
+        // Wash with background color
+        const wash = 1 - this.mapOpacity;
+        if (wash > 0.01) {
+            tmp.globalAlpha = wash;
+            tmp.fillStyle = this.backgroundColor;
+            tmp.fillRect(0, 0, size.width, size.height);
+            tmp.globalAlpha = 1;
+        }
+
+        // Draw the composited map onto the main canvas
+        ctx.drawImage(tmpCanvas, 0, 0, size.width, size.height);
     }
 
     render() {
