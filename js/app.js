@@ -7,6 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const orientationBtn = document.getElementById('orientationBtn');
     const routeColorInput = document.getElementById('routeColor');
     const backgroundColorInput = document.getElementById('backgroundColor');
+    const backgroundColor2Input = document.getElementById('backgroundColor2');
     const lineWidthSlider = document.getElementById('lineWidth');
     const lineWidthValue = document.getElementById('lineWidthValue');
     const lineStyleSelect = document.getElementById('lineStyle');
@@ -19,6 +20,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const canvas = document.getElementById('routeCanvas');
     const textOverlay = document.getElementById('textOverlay');
     const loadingOverlay = document.getElementById('loadingOverlay');
+    const solidColorControls = document.getElementById('solidColorControls');
+    const speedInfo = document.getElementById('speedInfo');
+    const speedModeLabel = document.getElementById('speedModeLabel');
+    const colorModeRadios = document.querySelectorAll('input[name="colorMode"]');
 
     // Initialize managers
     const routeRenderer = new RouteRenderer(canvas);
@@ -69,11 +74,29 @@ document.addEventListener('DOMContentLoaded', () => {
 
             routeRenderer.loadCoordinates(result.coordinates);
 
+            // Show/hide speed heatmap option based on time data availability
+            if (routeRenderer.hasTimeData) {
+                speedModeLabel.classList.remove('disabled');
+                speedModeLabel.querySelector('input').disabled = false;
+                speedModeLabel.title = '';
+            } else {
+                speedModeLabel.classList.add('disabled');
+                speedModeLabel.querySelector('input').disabled = true;
+                speedModeLabel.title = 'No time data available in this file';
+                // Force back to solid if was on speed
+                if (routeRenderer.colorMode === 'speed') {
+                    document.querySelector('input[name="colorMode"][value="solid"]').checked = true;
+                    routeRenderer.setColorMode('solid');
+                    solidColorControls.style.display = '';
+                    speedInfo.style.display = 'none';
+                }
+            }
+
             // Show file info
             uploadFeedback.className = 'upload-feedback success';
             uploadFeedback.innerHTML = `
                 <strong>${file.name}</strong><br>
-                ${result.coordinates.length} GPS points loaded
+                ${result.coordinates.length} GPS points loaded${routeRenderer.hasTimeData ? ' (speed data available)' : ''}
             `;
 
             // Update upload area to show loaded state
@@ -85,25 +108,28 @@ document.addEventListener('DOMContentLoaded', () => {
 
             exportBtn.disabled = false;
 
-            // Add default text elements with metadata
+            // Add default text elements with metadata (centered)
             textManager.clearAll();
+
+            const canvasRect = canvas.getBoundingClientRect();
+            const centerX = canvasRect.width / 2;
 
             if (result.metadata.name) {
                 textManager.addTextElement(result.metadata.name, {
-                    x: 50, y: 50, fontSize: 24, fontFamily: 'Playfair Display'
+                    x: centerX, y: 50, fontSize: 24, fontFamily: 'Playfair Display', alignment: 'center'
                 });
             }
 
             if (result.metadata.time) {
                 textManager.addTextElement(result.metadata.time.toLocaleDateString(), {
-                    x: 50, y: 80, fontSize: 16, fontFamily: 'Montserrat'
+                    x: centerX, y: 80, fontSize: 16, fontFamily: 'Montserrat', alignment: 'center'
                 });
             }
 
             if (result.metadata.distance) {
                 const distKm = (result.metadata.distance / 1000).toFixed(2);
                 textManager.addTextElement(`${distKm} km`, {
-                    x: 50, y: 110, fontSize: 16, fontFamily: 'Montserrat'
+                    x: centerX, y: 110, fontSize: 16, fontFamily: 'Montserrat', alignment: 'center'
                 });
             }
 
@@ -111,7 +137,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const h = Math.floor(result.metadata.duration / 3600);
                 const m = Math.floor((result.metadata.duration % 3600) / 60);
                 textManager.addTextElement(h > 0 ? `${h}h ${m}m` : `${m}m`, {
-                    x: 50, y: 140, fontSize: 16, fontFamily: 'Montserrat'
+                    x: centerX, y: 140, fontSize: 16, fontFamily: 'Montserrat', alignment: 'center'
                 });
             }
 
@@ -146,18 +172,46 @@ document.addEventListener('DOMContentLoaded', () => {
         syncOverlaySize();
     });
 
+    // --- Color Mode ---
+    colorModeRadios.forEach(radio => {
+        radio.addEventListener('change', (e) => {
+            const mode = e.target.value;
+            routeRenderer.setColorMode(mode);
+            if (mode === 'speed') {
+                solidColorControls.style.display = 'none';
+                speedInfo.style.display = '';
+            } else {
+                solidColorControls.style.display = '';
+                speedInfo.style.display = 'none';
+            }
+        });
+    });
+
     // --- Colors ---
     routeColorInput.addEventListener('change', (e) => {
         routeRenderer.setColors(e.target.value, backgroundColorInput.value);
     });
     backgroundColorInput.addEventListener('change', (e) => {
         routeRenderer.setColors(routeColorInput.value, e.target.value);
+        backgroundColor2Input.value = e.target.value;
+    });
+    backgroundColor2Input.addEventListener('change', (e) => {
+        routeRenderer.backgroundColor = e.target.value;
+        backgroundColorInput.value = e.target.value;
+        if (routeRenderer.coordinates.length > 0) routeRenderer.render();
     });
 
     document.querySelectorAll('.preset-btn').forEach(btn => {
         btn.addEventListener('click', () => {
+            // Switch to solid mode when clicking presets
+            document.querySelector('input[name="colorMode"][value="solid"]').checked = true;
+            routeRenderer.setColorMode('solid');
+            solidColorControls.style.display = '';
+            speedInfo.style.display = 'none';
+
             routeColorInput.value = btn.dataset.route;
             backgroundColorInput.value = btn.dataset.bg;
+            backgroundColor2Input.value = btn.dataset.bg;
             routeRenderer.setColors(btn.dataset.route, btn.dataset.bg);
         });
     });
@@ -185,10 +239,11 @@ document.addEventListener('DOMContentLoaded', () => {
     addTextBtn.addEventListener('click', () => {
         const canvasRect = canvas.getBoundingClientRect();
         textManager.addTextElement('Custom Text', {
-            x: canvasRect.width / 2 - 50,
+            x: canvasRect.width / 2,
             y: canvasRect.height / 2,
             fontSize: 20,
-            fontFamily: 'Montserrat'
+            fontFamily: 'Montserrat',
+            alignment: 'center'
         });
     });
 
@@ -209,6 +264,9 @@ document.addEventListener('DOMContentLoaded', () => {
         currentGPSData = null;
         routeRenderer.coordinates = [];
         routeRenderer.bounds = null;
+        routeRenderer.speeds = [];
+        routeRenderer.hasTimeData = false;
+        routeRenderer.colorMode = 'solid';
 
         // Clear canvas
         const size = routeRenderer.getSize();
@@ -231,9 +289,17 @@ document.addEventListener('DOMContentLoaded', () => {
         uploadFeedback.textContent = '';
         fileInput.value = '';
 
+        // Reset color mode
+        document.querySelector('input[name="colorMode"][value="solid"]').checked = true;
+        solidColorControls.style.display = '';
+        speedInfo.style.display = 'none';
+        speedModeLabel.classList.remove('disabled');
+        speedModeLabel.querySelector('input').disabled = false;
+
         // Reset controls to defaults
         routeColorInput.value = '#000000';
         backgroundColorInput.value = '#FFFFFF';
+        backgroundColor2Input.value = '#FFFFFF';
         routeRenderer.setColors('#000000', '#FFFFFF');
         lineWidthSlider.value = '2';
         lineWidthValue.textContent = '2px';

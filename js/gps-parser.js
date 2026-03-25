@@ -28,7 +28,7 @@ class GPSParser {
         const nameElement = xmlDoc.querySelector('name');
         if (nameElement) metadata.name = nameElement.textContent;
 
-        const timeElement = xmlDoc.querySelector('time');
+        const timeElement = xmlDoc.querySelector('metadata > time, gpx > time');
         if (timeElement) metadata.time = new Date(timeElement.textContent);
 
         const trackpoints = xmlDoc.querySelectorAll('trkpt');
@@ -44,14 +44,16 @@ class GPSParser {
             const lon = parseFloat(point.getAttribute('lon'));
 
             if (!isNaN(lat) && !isNaN(lon)) {
-                coordinates.push({ lat, lon });
+                const coord = { lat, lon, time: null };
 
                 const timeElem = point.querySelector('time');
                 if (timeElem) {
-                    const time = new Date(timeElem.textContent);
-                    if (!firstTime) firstTime = time;
-                    lastTime = time;
+                    coord.time = new Date(timeElem.textContent);
+                    if (!firstTime) firstTime = coord.time;
+                    lastTime = coord.time;
                 }
+
+                coordinates.push(coord);
 
                 if (prevPoint) {
                     metadata.distance += this.calculateDistance(prevPoint, { lat, lon });
@@ -60,6 +62,7 @@ class GPSParser {
             }
         });
 
+        if (!metadata.time && firstTime) metadata.time = firstTime;
         if (firstTime && lastTime) {
             metadata.duration = (lastTime - firstTime) / 1000;
         }
@@ -101,14 +104,16 @@ class GPSParser {
                 const lon = parseFloat(lonElem.textContent);
 
                 if (!isNaN(lat) && !isNaN(lon)) {
-                    coordinates.push({ lat, lon });
+                    const coord = { lat, lon, time: null };
 
                     const timeElem = point.querySelector('Time');
                     if (timeElem) {
-                        const time = new Date(timeElem.textContent);
-                        if (!firstTime) firstTime = time;
-                        lastTime = time;
+                        coord.time = new Date(timeElem.textContent);
+                        if (!firstTime) firstTime = coord.time;
+                        lastTime = coord.time;
                     }
+
+                    coordinates.push(coord);
 
                     if (prevPoint) {
                         metadata.distance += this.calculateDistance(prevPoint, { lat, lon });
@@ -155,12 +160,16 @@ class GPSParser {
             if (session.total_elapsed_time) metadata.duration = session.total_elapsed_time;
         }
 
+        // FIT timestamps are seconds since 1989-12-31 00:00:00 UTC
+        const FIT_EPOCH = 631065600000; // ms offset from Unix epoch
+
         let prevPoint = null;
         records.forEach(record => {
             if (record.position_lat != null && record.position_long != null) {
                 const lat = record.position_lat * (180 / Math.pow(2, 31));
                 const lon = record.position_long * (180 / Math.pow(2, 31));
-                coordinates.push({ lat, lon });
+                const time = record.timestamp ? new Date(record.timestamp * 1000 + FIT_EPOCH) : null;
+                coordinates.push({ lat, lon, time });
 
                 if (!metadata.distance && prevPoint) {
                     metadata.distance += this.calculateDistance(prevPoint, { lat, lon });

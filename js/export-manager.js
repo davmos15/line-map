@@ -99,35 +99,61 @@ class ExportManager {
 
         // Route path
         if (this.routeRenderer.coordinates.length > 0) {
-            const path = document.createElementNS(ns, 'path');
-            const coords = this.routeRenderer.coordinates;
-            const points = coords.map(c => this.routeRenderer.latLonToCanvas(c.lat, c.lon, size));
+            const rr = this.routeRenderer;
+            const coords = rr.coordinates;
+            const points = coords.map(c => rr.latLonToCanvas(c.lat, c.lon, size));
 
-            let d = '';
-            if (this.routeRenderer.smoothing > 0 && points.length > 2) {
-                d = this._buildSmoothedSVGPath(points);
+            const dashAttr = rr.lineStyle === 'dashed' ? `${rr.lineWidth * 4},${rr.lineWidth * 3}` :
+                             rr.lineStyle === 'dotted' ? `${rr.lineWidth},${rr.lineWidth * 2}` : null;
+
+            if (rr.colorMode === 'speed' && rr.hasTimeData) {
+                // Draw each segment with its speed color
+                for (let i = 0; i < points.length - 1; i++) {
+                    const speed = rr.speeds[i] !== undefined ? rr.speeds[i] : 0;
+                    const seg = document.createElementNS(ns, 'path');
+                    let d;
+                    if (rr.smoothing > 0 && points.length > 2) {
+                        const p0 = points[Math.max(0, i - 1)];
+                        const p1 = points[i];
+                        const p2 = points[i + 1];
+                        const p3 = points[Math.min(points.length - 1, i + 2)];
+                        const t = rr.smoothing;
+                        const cp1x = p1.x + (p2.x - p0.x) * t / 6;
+                        const cp1y = p1.y + (p2.y - p0.y) * t / 6;
+                        const cp2x = p2.x - (p3.x - p1.x) * t / 6;
+                        const cp2y = p2.y - (p3.y - p1.y) * t / 6;
+                        d = `M ${p1.x} ${p1.y} C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${p2.x} ${p2.y}`;
+                    } else {
+                        d = `M ${points[i].x} ${points[i].y} L ${points[i+1].x} ${points[i+1].y}`;
+                    }
+                    seg.setAttribute('d', d);
+                    seg.setAttribute('stroke', rr.speedToColor(speed));
+                    seg.setAttribute('stroke-width', rr.lineWidth);
+                    seg.setAttribute('fill', 'none');
+                    seg.setAttribute('stroke-linecap', 'round');
+                    seg.setAttribute('stroke-linejoin', 'round');
+                    if (dashAttr) seg.setAttribute('stroke-dasharray', dashAttr);
+                    svg.appendChild(seg);
+                }
             } else {
-                points.forEach((p, i) => {
-                    d += i === 0 ? `M ${p.x} ${p.y}` : ` L ${p.x} ${p.y}`;
-                });
+                const path = document.createElementNS(ns, 'path');
+                let d = '';
+                if (rr.smoothing > 0 && points.length > 2) {
+                    d = this._buildSmoothedSVGPath(points);
+                } else {
+                    points.forEach((p, i) => {
+                        d += i === 0 ? `M ${p.x} ${p.y}` : ` L ${p.x} ${p.y}`;
+                    });
+                }
+                path.setAttribute('d', d);
+                path.setAttribute('stroke', rr.routeColor);
+                path.setAttribute('stroke-width', rr.lineWidth);
+                path.setAttribute('fill', 'none');
+                path.setAttribute('stroke-linecap', 'round');
+                path.setAttribute('stroke-linejoin', 'round');
+                if (dashAttr) path.setAttribute('stroke-dasharray', dashAttr);
+                svg.appendChild(path);
             }
-
-            path.setAttribute('d', d);
-            path.setAttribute('stroke', this.routeRenderer.routeColor);
-            path.setAttribute('stroke-width', this.routeRenderer.lineWidth);
-            path.setAttribute('fill', 'none');
-            path.setAttribute('stroke-linecap', 'round');
-            path.setAttribute('stroke-linejoin', 'round');
-
-            if (this.routeRenderer.lineStyle === 'dashed') {
-                const w = this.routeRenderer.lineWidth;
-                path.setAttribute('stroke-dasharray', `${w * 4},${w * 3}`);
-            } else if (this.routeRenderer.lineStyle === 'dotted') {
-                const w = this.routeRenderer.lineWidth;
-                path.setAttribute('stroke-dasharray', `${w},${w * 2}`);
-            }
-
-            svg.appendChild(path);
         }
 
         // Text elements (converted to mm-space)

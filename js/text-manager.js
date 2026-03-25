@@ -5,7 +5,6 @@ class TextManager {
         this.nextId = 1;
     }
 
-    // Available fonts (must match what's loaded in CSS/HTML)
     static get FONTS() {
         return [
             { value: 'Arial', label: 'Arial' },
@@ -19,6 +18,12 @@ class TextManager {
         ];
     }
 
+    _alignTransform(alignment) {
+        if (alignment === 'center') return 'translateX(-50%)';
+        if (alignment === 'right') return 'translateX(-100%)';
+        return 'none';
+    }
+
     addTextElement(text = 'New Text', options = {}) {
         const id = `text-${this.nextId++}`;
         const element = {
@@ -29,7 +34,7 @@ class TextManager {
             fontSize: options.fontSize || 16,
             fontFamily: options.fontFamily || 'Montserrat',
             color: options.color || '#000000',
-            alignment: options.alignment || 'left'
+            alignment: options.alignment || 'center'
         };
 
         this.textElements.push(element);
@@ -48,7 +53,7 @@ class TextManager {
         div.style.fontSize = `${element.fontSize}px`;
         div.style.fontFamily = element.fontFamily;
         div.style.color = element.color;
-        div.style.textAlign = element.alignment;
+        div.style.transform = this._alignTransform(element.alignment);
 
         this.makeDraggable(div, element);
         this.overlayContainer.appendChild(div);
@@ -61,12 +66,11 @@ class TextManager {
         const startDrag = (e) => {
             isDragging = true;
             div.classList.add('dragging');
-            const rect = div.getBoundingClientRect();
-            const containerRect = this.overlayContainer.getBoundingClientRect();
             startX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
             startY = e.type.includes('mouse') ? e.clientY : e.touches[0].clientY;
-            initialX = rect.left - containerRect.left;
-            initialY = rect.top - containerRect.top;
+            // Use the stored anchor position, not the visual bounding rect
+            initialX = element.x;
+            initialY = element.y;
             e.preventDefault();
         };
 
@@ -74,12 +78,8 @@ class TextManager {
             if (!isDragging) return;
             const currentX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
             const currentY = e.type.includes('mouse') ? e.clientY : e.touches[0].clientY;
-            const newX = initialX + (currentX - startX);
-            const newY = initialY + (currentY - startY);
-            const containerRect = this.overlayContainer.getBoundingClientRect();
-            const elementRect = div.getBoundingClientRect();
-            element.x = Math.max(0, Math.min(newX, containerRect.width - elementRect.width));
-            element.y = Math.max(0, Math.min(newY, containerRect.height - elementRect.height));
+            element.x = initialX + (currentX - startX);
+            element.y = initialY + (currentY - startY);
             div.style.left = `${element.x}px`;
             div.style.top = `${element.y}px`;
         };
@@ -107,7 +107,9 @@ class TextManager {
             if (properties.fontSize !== undefined) div.style.fontSize = `${properties.fontSize}px`;
             if (properties.fontFamily !== undefined) div.style.fontFamily = properties.fontFamily;
             if (properties.color !== undefined) div.style.color = properties.color;
-            if (properties.alignment !== undefined) div.style.textAlign = properties.alignment;
+            if (properties.alignment !== undefined) {
+                div.style.transform = this._alignTransform(properties.alignment);
+            }
         }
     }
 
@@ -159,7 +161,6 @@ class TextManager {
             container.appendChild(item);
         });
 
-        // Add event listeners
         container.querySelectorAll('.text-input').forEach(input => {
             input.addEventListener('input', (e) => {
                 this.updateTextElement(e.target.dataset.id, { text: e.target.value });

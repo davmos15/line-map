@@ -225,6 +225,41 @@ h2 {
     border-color: #999;
 }
 
+/* Color Mode Toggle */
+.color-mode-row {
+    display: flex;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+}
+
+.color-mode-option {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.8rem;
+    color: #666;
+    cursor: pointer;
+}
+
+.color-mode-option input[type="radio"] {
+    accent-color: #333;
+}
+
+.color-mode-option.disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.speed-info {
+    padding: 0.5rem 0;
+    font-size: 0.75rem;
+    color: #888;
+}
+
+.speed-info p {
+    line-height: 1.4;
+}
+
 /* Colors */
 .color-controls {
     display: flex;

@@ -52,6 +52,15 @@
 
                 <section class="color-section">
                     <h2>Colors</h2>
+                    <div class="color-mode-row">
+                        <label class="color-mode-option">
+                            <input type="radio" name="colorMode" value="solid" checked> Solid Color
+                        </label>
+                        <label class="color-mode-option" id="speedModeLabel">
+                            <input type="radio" name="colorMode" value="speed"> Speed Heatmap
+                        </label>
+                    </div>
+                    <div id="solidColorControls">
                     <div class="color-controls">
                         <div class="color-control">
                             <label for="routeColor">Route Line</label>
@@ -93,6 +102,14 @@
                         <button class="preset-btn" data-route="#E6E6E6" data-bg="#1C1C1C" title="Silver on Charcoal">
                             <span class="preset-swatch" style="background:#1C1C1C;color:#E6E6E6">A</span>
                         </button>
+                    </div>
+                    </div>
+                    <div id="speedInfo" class="speed-info" style="display:none">
+                        <p>Route colored by speed: <span style="color:hsl(240,100%,50%)">slow</span> → <span style="color:hsl(120,100%,50%)">medium</span> → <span style="color:hsl(0,100%,50%)">fast</span></p>
+                        <div class="color-control" style="margin-top:0.5rem">
+                            <label for="backgroundColor2">Background</label>
+                            <input type="color" id="backgroundColor2" value="#FFFFFF">
+                        </div>
                     </div>
                 </section>
 
