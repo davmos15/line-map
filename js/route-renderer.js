@@ -64,13 +64,19 @@ class RouteRenderer {
     setPrintSize(size) {
         this.printSize = size;
         this.updateCanvasSize();
-        if (this.coordinates.length > 0) this.render();
+        if (this.coordinates.length > 0) {
+            if (this.showMap && this.bounds) this.loadMapTiles();
+            else this.render();
+        }
     }
 
     setOrientation(orientation) {
         this.orientation = orientation;
         this.updateCanvasSize();
-        if (this.coordinates.length > 0) this.render();
+        if (this.coordinates.length > 0) {
+            if (this.showMap && this.bounds) this.loadMapTiles();
+            else this.render();
+        }
     }
 
     updateCanvasSize() {
@@ -422,13 +428,15 @@ class RouteRenderer {
         const minT = this._latLonToTile(cb.maxLat, cb.minLon, zoom);
         const maxT = this._latLonToTile(cb.minLat, cb.maxLon, zoom);
 
+        // Pad by 1 tile on each side to cover edges
+        const pad = 1;
         const promises = [];
-        for (let tx = minT.x; tx <= maxT.x; tx++) {
-            for (let ty = minT.y; ty <= maxT.y; ty++) {
+        for (let tx = minT.x - pad; tx <= maxT.x + pad; tx++) {
+            for (let ty = minT.y - pad; ty <= maxT.y + pad; ty++) {
                 promises.push(this._fetchTile(zoom, tx, ty));
             }
         }
-        this._mapMeta = { zoom, minX: minT.x, minY: minT.y, maxX: maxT.x, maxY: maxT.y };
+        this._mapMeta = { zoom, minX: minT.x - pad, minY: minT.y - pad, maxX: maxT.x + pad, maxY: maxT.y + pad };
         await Promise.all(promises);
         this._mapReady = true;
         this.render();
