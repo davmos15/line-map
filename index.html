@@ -18,7 +18,60 @@
             <h1>LineArt Maps</h1>
             <span class="sep">|</span>
             <p>Turn your routes into wall art</p>
+            <div class="header-actions">
+                <button id="instructionsBtn" class="header-btn" title="How to use">?</button>
+                <a href="https://buymeacoffee.com/nadavmoskow" target="_blank" rel="noopener" class="header-btn coffee-btn" title="Buy me a coffee">☕</a>
+            </div>
         </header>
+
+        <!-- Instructions Modal -->
+        <div id="instructionsModal" class="modal-overlay" style="display:none">
+            <div class="modal">
+                <div class="modal-header">
+                    <h2>How to Use LineArt Maps</h2>
+                    <button id="closeModal" class="modal-close">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="step">
+                        <div class="step-num">1</div>
+                        <div>
+                            <strong>Upload your GPS file</strong>
+                            <p>Drop a GPX, TCX, or FIT file onto the upload area — or click to browse. These files contain the GPS route from your run, ride, or hike.</p>
+                        </div>
+                    </div>
+                    <div class="step">
+                        <div class="step-num">2</div>
+                        <div>
+                            <strong>Get your GPS file</strong>
+                            <p><b>Strava:</b> Activity page → ··· menu → Export GPX<br>
+                            <b>Garmin:</b> Activity → gear icon → Export to GPX<br>
+                            <b>Apple Watch:</b> Use the HealthFit app to export workouts</p>
+                        </div>
+                    </div>
+                    <div class="step">
+                        <div class="step-num">3</div>
+                        <div>
+                            <strong>Customize your design</strong>
+                            <p>Choose a color preset or create your own. Adjust line width, smoothing, and style. Toggle the city map background and elevation profile. Edit text overlays — title, date, and stats are added automatically.</p>
+                        </div>
+                    </div>
+                    <div class="step">
+                        <div class="step-num">4</div>
+                        <div>
+                            <strong>Export and print</strong>
+                            <p>Download as PNG (high-res), SVG (vector — best for large prints), or PDF (exact paper dimensions). Take it to any print shop or upload to an online printing service.</p>
+                        </div>
+                    </div>
+                    <div class="step">
+                        <div class="step-num">💡</div>
+                        <div>
+                            <strong>Tips</strong>
+                            <p>Longer routes with more GPS points produce more detailed art. Dark backgrounds with light routes look stunning as prints. Use smoothing for a more artistic feel. For large prints (A2+), export as SVG for the sharpest quality.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
 
         <main>
             <div class="controls-panel">

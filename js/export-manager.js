@@ -48,12 +48,7 @@ class ExportManager {
     }
 
     _drawWatermark(ctx, size) {
-        ctx.save();
-        ctx.font = '3px Arial';
-        ctx.fillStyle = 'rgba(180,180,180,0.4)';
-        ctx.textAlign = 'right';
-        ctx.fillText('Made with LineArt Maps', size.width - 5, size.height - 5);
-        ctx.restore();
+        // No watermark — open source
     }
 
     async exportRaster(format, size, scale, filename) {
@@ -266,17 +261,6 @@ class ExportManager {
             text.textContent = mm.text;
             svg.appendChild(text);
         });
-
-        // Watermark
-        const wm = document.createElementNS(ns, 'text');
-        wm.setAttribute('x', size.width - 5);
-        wm.setAttribute('y', size.height - 5);
-        wm.setAttribute('font-family', 'Arial');
-        wm.setAttribute('font-size', '3');
-        wm.setAttribute('fill', 'rgba(180,180,180,0.4)');
-        wm.setAttribute('text-anchor', 'end');
-        wm.textContent = 'Made with LineArt Maps';
-        svg.appendChild(wm);
 
         // Download
         const svgData = new XMLSerializer().serializeToString(svg);

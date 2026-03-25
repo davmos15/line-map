@@ -1,73 +1,41 @@
 # LineArt Maps
 
-Turn your runs, rides, and hikes into beautiful wall art.
+**Turn your runs, rides, and hikes into beautiful wall art.**
 
-## Quick Start
+[**Try it live →**](https://davmos15.github.io/line-map)
 
-1. Open `index.html` in any modern browser (Chrome, Firefox, Safari, Edge)
-2. Upload a GPS file (GPX, TCX, or FIT)
-3. Customize colors, line style, text, and paper size
-4. Export as PNG, SVG, or PDF — ready to print
+Upload a GPS file from Strava, Garmin, or any fitness app and instantly create a print-ready minimalist map of your route. No install, no account — runs entirely in your browser.
 
-**No install. No account. Works completely offline.**
+## Features
 
-## Supported File Formats
-
-| Format | Source |
-|--------|--------|
-| **GPX** | Strava, Garmin Connect, AllTrails, Komoot, most fitness apps |
-| **TCX** | Garmin devices, Garmin Connect |
-| **FIT** | Garmin/Wahoo devices (native format) |
+- **GPS file support** — GPX, TCX, FIT (Strava, Garmin, Apple Watch, Wahoo, Komoot, AllTrails)
+- **10 color presets** — Navy on cream, gold on black, coral on dark, and more
+- **City map background** — Subtle street map overlay via OpenStreetMap/CARTO tiles
+- **Speed heatmap** — Color your route by pace with customizable gradient colors
+- **Elevation profile** — Optional area chart at the bottom showing terrain
+- **14 fonts** — Playfair Display, Bebas Neue, Montserrat, Lora, and more
+- **Text overlays** — Title, date, and stats auto-populated, fully customizable
+- **Line controls** — Width, smoothing, solid/dashed/dotted styles
+- **Export** — PNG (high-res), SVG (vector), PDF (print-ready)
+- **Paper sizes** — A5 through A0, portrait and landscape
 
 ## How to Get Your GPS File
 
-### From Strava
-1. Go to the activity page on strava.com
-2. Click the three dots (more) menu
-3. Select "Export GPX"
+| Source | How |
+|--------|-----|
+| **Strava** | Activity page → ··· menu → Export GPX |
+| **Garmin Connect** | Activity → gear icon → Export to GPX or Export Original |
+| **Apple Watch** | Use HealthFit app to export individual workouts |
+| **Others** | Komoot, AllTrails, Suunto, Coros all offer GPX export |
 
-### From Garmin Connect
-1. Go to the activity on connect.garmin.com
-2. Click the gear icon
-3. Select "Export to GPX" or "Export Original" (for FIT)
+## Tech
 
-### From Apple Watch
-1. Open the Health app on your iPhone
-2. Tap your profile > "Export All Health Data"
-3. Find workout GPX files in the export, or use a third-party app like HealthFit to export individual workouts
+Pure HTML/CSS/JavaScript — no build system, no npm, no framework. Fonts and jsPDF vendored locally. Map tiles from [CARTO](https://carto.com/) (OpenStreetMap data).
 
-### From Other Apps
-Most fitness apps (Komoot, AllTrails, Suunto, Coros, etc.) offer GPX export from their website or app settings.
+## License
 
-## Export Options
-
-- **PNG** — High-resolution raster image, great for printing or sharing
-- **SVG** — Scalable vector format, perfect for large prints
-- **PDF** — Print-ready document with exact paper dimensions
-
-## Tips for Best Results
-
-- Use activities with lots of GPS points (longer runs/rides) for more detailed art
-- Try different color presets — dark backgrounds with light routes look striking as prints
-- Use route smoothing for a more artistic look
-- For large prints (A2/A1), export as SVG for the sharpest quality
-- Add the activity name, date, and distance as text overlays for a personal touch
-
-## Paper Sizes
-
-Supports A5, A4, A3, A2, A1, and A0 in both portrait and landscape orientation.
-
-## System Requirements
-
-- Any modern web browser (Chrome, Firefox, Safari, Edge)
-- Works on Windows, macOS, and Linux
-- Works on tablets and phones
-- No internet connection required
+MIT — see [LICENSE](LICENSE)
 
 ## Support
 
-For questions or issues, contact: daviddaddles@mail.com
-
----
-
-Made with LineArt Maps
+If you find this useful, [buy me a coffee](https://buymeacoffee.com/nadavmoskow).

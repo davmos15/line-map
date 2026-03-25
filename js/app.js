@@ -1,5 +1,16 @@
 document.addEventListener('DOMContentLoaded', () => {
     const $ = id => document.getElementById(id);
+
+    // --- Instructions Modal ---
+    const instructionsBtn = $('instructionsBtn');
+    const instructionsModal = $('instructionsModal');
+    const closeModal = $('closeModal');
+    instructionsBtn.addEventListener('click', () => instructionsModal.style.display = 'flex');
+    closeModal.addEventListener('click', () => instructionsModal.style.display = 'none');
+    instructionsModal.addEventListener('click', e => {
+        if (e.target === instructionsModal) instructionsModal.style.display = 'none';
+    });
+
     const fileUploadArea = $('fileUploadArea');
     const fileInput = $('fileInput');
     const uploadFeedback = $('uploadFeedback');
