@@ -29,6 +29,9 @@ class RouteRenderer {
         this.speedRange = { min: 0, max: 1 };
         this.hasTimeData = false;
         this.showStartMarker = true;
+        this.showMap = false;
+        this._tileCache = {};
+        this._mapReady = false;
         // Heatmap colors as [r,g,b] arrays
         this.heatmapColors = {
             slow: [0, 0, 255],
@@ -341,6 +344,119 @@ class RouteRenderer {
         }
     }
 
+    // --- Map tile background ---
+
+    _isDarkBackground() {
+        const hex = this.backgroundColor.replace('#', '');
+        const r = parseInt(hex.substr(0, 2), 16);
+        const g = parseInt(hex.substr(2, 2), 16);
+        const b = parseInt(hex.substr(4, 2), 16);
+        return (r * 0.299 + g * 0.587 + b * 0.114) < 128;
+    }
+
+    _tileUrl(z, x, y) {
+        const style = this._isDarkBackground() ? 'dark_nolabels' : 'light_nolabels';
+        const server = ['a', 'b', 'c'][(x + y) % 3];
+        return `https://${server}.basemaps.cartocdn.com/${style}/${z}/${x}/${y}@2x.png`;
+    }
+
+    _latLonToTile(lat, lon, z) {
+        const n = Math.pow(2, z);
+        const x = Math.floor((lon + 180) / 360 * n);
+        const latRad = lat * Math.PI / 180;
+        const y = Math.floor((1 - Math.log(Math.tan(latRad) + 1 / Math.cos(latRad)) / Math.PI) / 2 * n);
+        return { x, y };
+    }
+
+    _tileToLatLon(tx, ty, z) {
+        const n = Math.pow(2, z);
+        const lon = tx / n * 360 - 180;
+        const latRad = Math.atan(Math.sinh(Math.PI * (1 - 2 * ty / n)));
+        return { lat: latRad * 180 / Math.PI, lon };
+    }
+
+    _getCanvasLatLonBounds(size) {
+        const latRange = this.bounds.maxLat - this.bounds.minLat || 0.001;
+        const lonRange = this.bounds.maxLon - this.bounds.minLon || 0.001;
+        const paddedW = size.width - 2 * this.padding;
+        const paddedH = size.height - 2 * this.padding;
+        const scale = Math.min(paddedW / lonRange, paddedH / latRange);
+        const cLat = (this.bounds.minLat + this.bounds.maxLat) / 2;
+        const cLon = (this.bounds.minLon + this.bounds.maxLon) / 2;
+        return {
+            minLat: cLat - size.height / (2 * scale),
+            maxLat: cLat + size.height / (2 * scale),
+            minLon: cLon - size.width / (2 * scale),
+            maxLon: cLon + size.width / (2 * scale)
+        };
+    }
+
+    _calculateZoom() {
+        const cb = this._getCanvasLatLonBounds(this.getSize());
+        const lonRange = cb.maxLon - cb.minLon;
+        for (let z = 17; z >= 1; z--) {
+            if (lonRange / (360 / Math.pow(2, z)) <= 8) return z;
+        }
+        return 10;
+    }
+
+    _fetchTile(z, x, y) {
+        const key = `${z}/${x}/${y}/${this._isDarkBackground() ? 'd' : 'l'}`;
+        if (this._tileCache[key]) return Promise.resolve(this._tileCache[key]);
+        return new Promise(resolve => {
+            const img = new Image();
+            img.crossOrigin = 'anonymous';
+            img.onload = () => { this._tileCache[key] = img; resolve(img); };
+            img.onerror = () => resolve(null);
+            img.src = this._tileUrl(z, x, y);
+        });
+    }
+
+    async loadMapTiles() {
+        if (!this.showMap || !this.bounds) { this._mapReady = false; return; }
+        const size = this.getSize();
+        const zoom = this._calculateZoom();
+        const cb = this._getCanvasLatLonBounds(size);
+
+        const minT = this._latLonToTile(cb.maxLat, cb.minLon, zoom);
+        const maxT = this._latLonToTile(cb.minLat, cb.maxLon, zoom);
+
+        const promises = [];
+        for (let tx = minT.x; tx <= maxT.x; tx++) {
+            for (let ty = minT.y; ty <= maxT.y; ty++) {
+                promises.push(this._fetchTile(zoom, tx, ty));
+            }
+        }
+        this._mapMeta = { zoom, minX: minT.x, minY: minT.y, maxX: maxT.x, maxY: maxT.y };
+        await Promise.all(promises);
+        this._mapReady = true;
+        this.render();
+    }
+
+    renderMapBackground(ctx, size) {
+        if (!this.showMap || !this._mapReady || !this._mapMeta) return;
+        const { zoom, minX, minY, maxX, maxY } = this._mapMeta;
+        const dark = this._isDarkBackground();
+        const key_suffix = dark ? 'd' : 'l';
+
+        for (let tx = minX; tx <= maxX; tx++) {
+            for (let ty = minY; ty <= maxY; ty++) {
+                const tile = this._tileCache[`${zoom}/${tx}/${ty}/${key_suffix}`];
+                if (!tile) continue;
+                const tl = this._tileToLatLon(tx, ty, zoom);
+                const br = this._tileToLatLon(tx + 1, ty + 1, zoom);
+                const p1 = this.latLonToCanvas(tl.lat, tl.lon, size);
+                const p2 = this.latLonToCanvas(br.lat, br.lon, size);
+                ctx.drawImage(tile, p1.x, p1.y, p2.x - p1.x, p2.y - p1.y);
+            }
+        }
+        // Wash with background color to keep it subtle and themed
+        ctx.globalAlpha = 0.82;
+        ctx.fillStyle = this.backgroundColor;
+        ctx.fillRect(0, 0, size.width, size.height);
+        ctx.globalAlpha = 1;
+    }
+
     render() {
         if (!this.bounds || this.coordinates.length === 0) return;
         const size = this.getSize();
@@ -351,6 +467,7 @@ class RouteRenderer {
         this.ctx.fillStyle = this.backgroundColor;
         this.ctx.fillRect(0, 0, size.width, size.height);
 
+        this.renderMapBackground(this.ctx, size);
         this.renderDecorations(this.ctx, size);
         this.renderRoute(this.ctx, size);
     }

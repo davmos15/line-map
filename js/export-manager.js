@@ -68,7 +68,8 @@ class ExportManager {
         ctx.fillStyle = this.routeRenderer.backgroundColor;
         ctx.fillRect(0, 0, size.width, size.height);
 
-        // Decorations and route
+        // Map background, decorations, and route
+        this.routeRenderer.renderMapBackground(ctx, size);
         this.routeRenderer.renderDecorations(ctx, size);
         this.routeRenderer.renderRoute(ctx, size);
 
@@ -104,8 +105,25 @@ class ExportManager {
         rect.setAttribute('fill', this.routeRenderer.backgroundColor);
         svg.appendChild(rect);
 
-        // Inner border frame
+        // Map background as embedded raster (if enabled)
         const rr0 = this.routeRenderer;
+        if (rr0.showMap && rr0._mapReady) {
+            const mapCanvas = document.createElement('canvas');
+            mapCanvas.width = size.width * 4;
+            mapCanvas.height = size.height * 4;
+            const mctx = mapCanvas.getContext('2d');
+            mctx.scale(4, 4);
+            mctx.fillStyle = rr0.backgroundColor;
+            mctx.fillRect(0, 0, size.width, size.height);
+            rr0.renderMapBackground(mctx, size);
+            const mapImg = document.createElementNS(ns, 'image');
+            mapImg.setAttribute('width', size.width);
+            mapImg.setAttribute('height', size.height);
+            mapImg.setAttribute('href', mapCanvas.toDataURL('image/png'));
+            svg.appendChild(mapImg);
+        }
+
+        // Inner border frame
         const margin = 10;
         const borderRect = document.createElementNS(ns, 'rect');
         borderRect.setAttribute('x', margin);
@@ -299,7 +317,8 @@ class ExportManager {
         ctx.fillStyle = this.routeRenderer.backgroundColor;
         ctx.fillRect(0, 0, size.width, size.height);
 
-        // Decorations and route at export resolution
+        // Map background, decorations, and route at export resolution
+        this.routeRenderer.renderMapBackground(ctx, size);
         this.routeRenderer.renderDecorations(ctx, size);
         this.routeRenderer.renderRoute(ctx, size);
 

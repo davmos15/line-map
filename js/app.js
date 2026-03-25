@@ -17,6 +17,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const smoothingSlider = $('smoothing');
     const smoothingValue = $('smoothingValue');
     const showMarkerToggle = $('showMarker');
+    const showMapToggle = $('showMap');
     const addTextBtn = $('addTextBtn');
     const exportBtn = $('exportBtn');
     const exportFormat = $('exportFormat');
@@ -202,6 +203,9 @@ document.addEventListener('DOMContentLoaded', () => {
             backgroundColor2Input.value = bg;
             routeRenderer.setColors(rc, bg);
 
+            // Reload map tiles if map is showing (light/dark may have changed)
+            if (routeRenderer.showMap && routeRenderer.bounds) routeRenderer.loadMapTiles();
+
             // Sync text colors to match theme
             syncTextColors(rc);
         });
@@ -221,6 +225,15 @@ document.addEventListener('DOMContentLoaded', () => {
     showMarkerToggle.addEventListener('change', e => {
         routeRenderer.showStartMarker = e.target.checked;
         if (routeRenderer.coordinates.length > 0) routeRenderer.render();
+    });
+    showMapToggle.addEventListener('change', e => {
+        routeRenderer.showMap = e.target.checked;
+        if (e.target.checked && routeRenderer.bounds) {
+            routeRenderer.loadMapTiles();
+        } else {
+            routeRenderer._mapReady = false;
+            if (routeRenderer.coordinates.length > 0) routeRenderer.render();
+        }
     });
 
     // --- Text ---
@@ -251,6 +264,9 @@ document.addEventListener('DOMContentLoaded', () => {
         routeRenderer.hasTimeData = false;
         routeRenderer.colorMode = 'solid';
         routeRenderer.showStartMarker = true;
+        routeRenderer.showMap = false;
+        routeRenderer._mapReady = false;
+        showMapToggle.checked = false;
 
         const size = routeRenderer.getSize();
         const ctx = canvas.getContext('2d');
