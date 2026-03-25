@@ -113,15 +113,41 @@ class ExportManager {
                              rr.lineStyle === 'dotted' ? `${rr.lineWidth},${rr.lineWidth * 2}` : null;
 
             if (rr.colorMode === 'speed' && rr.hasTimeData) {
-                // Draw each segment with its speed color
+                // Create a <defs> for per-segment gradients
+                const defs = document.createElementNS(ns, 'defs');
+                svg.appendChild(defs);
+
                 for (let i = 0; i < points.length - 1; i++) {
-                    const speed = rr.speeds[i] !== undefined ? rr.speeds[i] : 0;
+                    const p1 = points[i], p2 = points[i + 1];
+                    const dx = p2.x - p1.x, dy = p2.y - p1.y;
+                    if (dx * dx + dy * dy < 0.01) continue;
+
+                    const c1 = rr.speedToColor(rr.speeds[i] || 0);
+                    const c2 = rr.speedToColor(rr.speeds[Math.min(i + 1, rr.speeds.length - 1)] || 0);
+
+                    // Create linear gradient for this segment
+                    const gradId = `sg${i}`;
+                    const grad = document.createElementNS(ns, 'linearGradient');
+                    grad.setAttribute('id', gradId);
+                    grad.setAttribute('gradientUnits', 'userSpaceOnUse');
+                    grad.setAttribute('x1', p1.x);
+                    grad.setAttribute('y1', p1.y);
+                    grad.setAttribute('x2', p2.x);
+                    grad.setAttribute('y2', p2.y);
+                    const stop1 = document.createElementNS(ns, 'stop');
+                    stop1.setAttribute('offset', '0%');
+                    stop1.setAttribute('stop-color', c1);
+                    const stop2 = document.createElementNS(ns, 'stop');
+                    stop2.setAttribute('offset', '100%');
+                    stop2.setAttribute('stop-color', c2);
+                    grad.appendChild(stop1);
+                    grad.appendChild(stop2);
+                    defs.appendChild(grad);
+
                     const seg = document.createElementNS(ns, 'path');
                     let d;
                     if (rr.smoothing > 0 && points.length > 2) {
                         const p0 = points[Math.max(0, i - 1)];
-                        const p1 = points[i];
-                        const p2 = points[i + 1];
                         const p3 = points[Math.min(points.length - 1, i + 2)];
                         const t = rr.smoothing;
                         const cp1x = p1.x + (p2.x - p0.x) * t / 6;
@@ -130,10 +156,10 @@ class ExportManager {
                         const cp2y = p2.y - (p3.y - p1.y) * t / 6;
                         d = `M ${p1.x} ${p1.y} C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${p2.x} ${p2.y}`;
                     } else {
-                        d = `M ${points[i].x} ${points[i].y} L ${points[i+1].x} ${points[i+1].y}`;
+                        d = `M ${p1.x} ${p1.y} L ${p2.x} ${p2.y}`;
                     }
                     seg.setAttribute('d', d);
-                    seg.setAttribute('stroke', rr.speedToColor(speed));
+                    seg.setAttribute('stroke', `url(#${gradId})`);
                     seg.setAttribute('stroke-width', rr.lineWidth);
                     seg.setAttribute('fill', 'none');
                     seg.setAttribute('stroke-linecap', 'round');

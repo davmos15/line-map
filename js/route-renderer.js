@@ -184,13 +184,6 @@ class RouteRenderer {
         return `rgb(${rgb[0]},${rgb[1]},${rgb[2]})`;
     }
 
-    // Quantize speed to a bucket (0-100) for batching consecutive same-color segments
-    _speedBucket(speed) {
-        const { min, max } = this.speedRange;
-        const t = Math.max(0, Math.min(1, (speed - min) / (max - min || 1)));
-        return Math.round(t * 100);
-    }
-
     latLonToCanvas(lat, lon, size) {
         size = size || this.getSize();
         const width = size.width;
@@ -263,36 +256,41 @@ class RouteRenderer {
         ctx.lineJoin = 'round';
         this._applyLineStyle(ctx);
 
-        // Batch consecutive segments with the same quantized color for smooth lines
-        const buckets = this.speeds.map(s => this._speedBucket(s));
-        let i = 0;
+        // Draw each segment with a linear gradient from its color to the next
+        // segment's color, creating truly smooth color transitions
+        for (let i = 0; i < points.length - 1; i++) {
+            const p1 = points[i];
+            const p2 = points[i + 1];
 
-        while (i < points.length - 1) {
-            const bucket = buckets[i];
-            const color = this.speedToColor(this.speeds[i]);
-            ctx.strokeStyle = color;
+            // Skip near-zero-length segments (prevent gradient issues and dots)
+            const dx = p2.x - p1.x, dy = p2.y - p1.y;
+            if (dx * dx + dy * dy < 0.01) continue;
+
+            const c1 = this.speedToColor(this.speeds[i] || 0);
+            const c2 = this.speedToColor(this.speeds[Math.min(i + 1, this.speeds.length - 1)] || 0);
+
+            const grad = ctx.createLinearGradient(p1.x, p1.y, p2.x, p2.y);
+            grad.addColorStop(0, c1);
+            grad.addColorStop(1, c2);
+
+            ctx.strokeStyle = grad;
             ctx.beginPath();
-            ctx.moveTo(points[i].x, points[i].y);
 
-            // Draw consecutive segments with the same color bucket
-            while (i < points.length - 1 && buckets[i] === bucket) {
-                if (this.smoothing > 0 && points.length > 2) {
-                    const p0 = points[Math.max(0, i - 1)];
-                    const p1 = points[i];
-                    const p2 = points[i + 1];
-                    const p3 = points[Math.min(points.length - 1, i + 2)];
-                    const t = this.smoothing;
-                    ctx.bezierCurveTo(
-                        p1.x + (p2.x - p0.x) * t / 6,
-                        p1.y + (p2.y - p0.y) * t / 6,
-                        p2.x - (p3.x - p1.x) * t / 6,
-                        p2.y - (p3.y - p1.y) * t / 6,
-                        p2.x, p2.y
-                    );
-                } else {
-                    ctx.lineTo(points[i + 1].x, points[i + 1].y);
-                }
-                i++;
+            if (this.smoothing > 0 && points.length > 2) {
+                const p0 = points[Math.max(0, i - 1)];
+                const p3 = points[Math.min(points.length - 1, i + 2)];
+                const t = this.smoothing;
+                ctx.moveTo(p1.x, p1.y);
+                ctx.bezierCurveTo(
+                    p1.x + (p2.x - p0.x) * t / 6,
+                    p1.y + (p2.y - p0.y) * t / 6,
+                    p2.x - (p3.x - p1.x) * t / 6,
+                    p2.y - (p3.y - p1.y) * t / 6,
+                    p2.x, p2.y
+                );
+            } else {
+                ctx.moveTo(p1.x, p1.y);
+                ctx.lineTo(p2.x, p2.y);
             }
             ctx.stroke();
         }
