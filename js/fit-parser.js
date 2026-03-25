@@ -120,7 +120,8 @@ class FitParser {
                     position_lat: lat,
                     position_long: lon,
                     timestamp: values[253] || null,
-                    distance: values[5] != null ? values[5] / 100 : null
+                    distance: values[5] != null ? values[5] / 100 : null,
+                    altitude: values[2] != null && values[2] !== 0xFFFF ? values[2] / 5 - 500 : null
                 });
             }
         }

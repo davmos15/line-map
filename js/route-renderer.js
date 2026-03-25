@@ -29,6 +29,8 @@ class RouteRenderer {
         this.speedRange = { min: 0, max: 1 };
         this.hasTimeData = false;
         this.showStartMarker = false;
+        this.showElevation = false;
+        this.hasElevationData = false;
         this.showMap = true;
         this.mapOpacity = 0.7; // 0 = hidden, 1 = full strength
         this._tileCache = {};
@@ -119,6 +121,7 @@ class RouteRenderer {
         this.coordinates = coordinates;
         this.calculateBounds();
         this.calculateSpeeds();
+        this.hasElevationData = coordinates.filter(c => c.ele != null).length > 10;
         this.render();
     }
 
@@ -505,6 +508,76 @@ class RouteRenderer {
         ctx.drawImage(tmpCanvas, 0, 0, size.width, size.height);
     }
 
+    renderElevation(ctx, size) {
+        if (!this.showElevation || !this.hasElevationData) return;
+
+        // Collect elevation values, interpolating gaps
+        const elevations = [];
+        let lastEle = null;
+        for (const c of this.coordinates) {
+            if (c.ele != null) lastEle = c.ele;
+            elevations.push(lastEle);
+        }
+        if (elevations.filter(e => e != null).length < 2) return;
+
+        // Fill leading nulls
+        const first = elevations.find(e => e != null);
+        for (let i = 0; i < elevations.length; i++) {
+            if (elevations[i] == null) elevations[i] = first;
+            else break;
+        }
+
+        const minEle = Math.min(...elevations);
+        const maxEle = Math.max(...elevations);
+        const eleRange = maxEle - minEle || 1;
+
+        // Draw area at bottom of canvas
+        const margin = 12;
+        const chartH = size.height * 0.08; // 8% of page height
+        const chartBottom = size.height - margin;
+        const chartTop = chartBottom - chartH;
+        const chartLeft = margin;
+        const chartWidth = size.width - 2 * margin;
+
+        ctx.save();
+
+        // Build the elevation path
+        ctx.beginPath();
+        ctx.moveTo(chartLeft, chartBottom);
+
+        for (let i = 0; i < elevations.length; i++) {
+            const x = chartLeft + (i / (elevations.length - 1)) * chartWidth;
+            const y = chartBottom - ((elevations[i] - minEle) / eleRange) * chartH;
+            if (i === 0) ctx.lineTo(x, y);
+            else ctx.lineTo(x, y);
+        }
+
+        ctx.lineTo(chartLeft + chartWidth, chartBottom);
+        ctx.closePath();
+
+        // Fill with route color at low opacity
+        ctx.globalAlpha = 0.12;
+        ctx.fillStyle = this.colorMode === 'speed' ? '#888' : this.routeColor;
+        ctx.fill();
+
+        // Stroke the top edge
+        ctx.globalAlpha = 0.25;
+        ctx.strokeStyle = this.colorMode === 'speed' ? '#888' : this.routeColor;
+        ctx.lineWidth = 0.3;
+        ctx.setLineDash([]);
+
+        ctx.beginPath();
+        for (let i = 0; i < elevations.length; i++) {
+            const x = chartLeft + (i / (elevations.length - 1)) * chartWidth;
+            const y = chartBottom - ((elevations[i] - minEle) / eleRange) * chartH;
+            if (i === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+
+        ctx.restore();
+    }
+
     render() {
         if (!this.bounds || this.coordinates.length === 0) return;
         const size = this.getSize();
@@ -516,6 +589,7 @@ class RouteRenderer {
         this.ctx.fillRect(0, 0, size.width, size.height);
 
         this.renderMapBackground(this.ctx, size);
+        this.renderElevation(this.ctx, size);
         this.renderDecorations(this.ctx, size);
         this.renderRoute(this.ctx, size);
     }

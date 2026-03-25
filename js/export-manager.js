@@ -68,8 +68,9 @@ class ExportManager {
         ctx.fillStyle = this.routeRenderer.backgroundColor;
         ctx.fillRect(0, 0, size.width, size.height);
 
-        // Map background, decorations, and route
+        // Map background, elevation, decorations, and route
         this.routeRenderer.renderMapBackground(ctx, size);
+        this.routeRenderer.renderElevation(ctx, size);
         this.routeRenderer.renderDecorations(ctx, size);
         this.routeRenderer.renderRoute(ctx, size);
 
@@ -121,6 +122,21 @@ class ExportManager {
             mapImg.setAttribute('height', size.height);
             mapImg.setAttribute('href', mapCanvas.toDataURL('image/png'));
             svg.appendChild(mapImg);
+        }
+
+        // Elevation profile as embedded raster
+        if (rr0.showElevation && rr0.hasElevationData) {
+            const eleCanvas = document.createElement('canvas');
+            eleCanvas.width = size.width * 4;
+            eleCanvas.height = size.height * 4;
+            const ectx = eleCanvas.getContext('2d');
+            ectx.scale(4, 4);
+            rr0.renderElevation(ectx, size);
+            const eleImg = document.createElementNS(ns, 'image');
+            eleImg.setAttribute('width', size.width);
+            eleImg.setAttribute('height', size.height);
+            eleImg.setAttribute('href', eleCanvas.toDataURL('image/png'));
+            svg.appendChild(eleImg);
         }
 
         // Inner border frame

@@ -17,6 +17,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const smoothingSlider = $('smoothing');
     const smoothingValue = $('smoothingValue');
     const showMarkerToggle = $('showMarker');
+    const showElevationToggle = $('showElevation');
+    const elevationRow = $('elevationRow');
     const showMapToggle = $('showMap');
     const mapOpacitySlider = $('mapOpacity');
     const mapOpacityValue = $('mapOpacityValue');
@@ -79,6 +81,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     speedInfo.style.display = 'none';
                 }
             }
+
+            // Elevation availability
+            elevationRow.style.display = routeRenderer.hasElevationData ? '' : 'none';
 
             uploadFeedback.className = 'upload-feedback success';
             uploadFeedback.innerHTML = `<strong>${file.name}</strong> — ${result.coordinates.length} pts${routeRenderer.hasTimeData ? ' · speed' : ''}`;
@@ -229,6 +234,10 @@ document.addEventListener('DOMContentLoaded', () => {
         smoothingValue.textContent = v === 0 ? 'Off' : `${Math.round(v*100)}%`;
         routeRenderer.setSmoothing(v);
     });
+    showElevationToggle.addEventListener('change', e => {
+        routeRenderer.showElevation = e.target.checked;
+        if (routeRenderer.coordinates.length > 0) routeRenderer.render();
+    });
     showMarkerToggle.addEventListener('change', e => {
         routeRenderer.showStartMarker = e.target.checked;
         if (routeRenderer.coordinates.length > 0) routeRenderer.render();
@@ -278,7 +287,11 @@ document.addEventListener('DOMContentLoaded', () => {
         routeRenderer.hasTimeData = false;
         routeRenderer.colorMode = 'solid';
         routeRenderer.showStartMarker = false;
+        routeRenderer.showElevation = false;
+        routeRenderer.hasElevationData = false;
         showMarkerToggle.checked = false;
+        showElevationToggle.checked = false;
+        elevationRow.style.display = 'none';
         routeRenderer.showMap = true;
         routeRenderer.mapOpacity = 0.7;
         routeRenderer._mapReady = false;

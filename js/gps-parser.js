@@ -44,7 +44,7 @@ class GPSParser {
             const lon = parseFloat(point.getAttribute('lon'));
 
             if (!isNaN(lat) && !isNaN(lon)) {
-                const coord = { lat, lon, time: null };
+                const coord = { lat, lon, time: null, ele: null };
 
                 const timeElem = point.querySelector('time');
                 if (timeElem) {
@@ -52,6 +52,9 @@ class GPSParser {
                     if (!firstTime) firstTime = coord.time;
                     lastTime = coord.time;
                 }
+
+                const eleElem = point.querySelector('ele');
+                if (eleElem) coord.ele = parseFloat(eleElem.textContent);
 
                 coordinates.push(coord);
 
@@ -131,7 +134,7 @@ class GPSParser {
                 const lon = parseFloat(lonElem.textContent);
 
                 if (!isNaN(lat) && !isNaN(lon)) {
-                    const coord = { lat, lon, time: null };
+                    const coord = { lat, lon, time: null, ele: null };
 
                     const timeElem = point.querySelector('Time');
                     if (timeElem) {
@@ -142,6 +145,9 @@ class GPSParser {
                             lastTime = t;
                         }
                     }
+
+                    const altElem = point.querySelector('AltitudeMeters');
+                    if (altElem) coord.ele = parseFloat(altElem.textContent);
 
                     coordinates.push(coord);
 
@@ -198,7 +204,7 @@ class GPSParser {
                 const lat = record.position_lat * (180 / Math.pow(2, 31));
                 const lon = record.position_long * (180 / Math.pow(2, 31));
                 const time = record.timestamp ? new Date(record.timestamp * 1000 + FIT_EPOCH) : null;
-                coordinates.push({ lat, lon, time });
+                coordinates.push({ lat, lon, time, ele: record.altitude || null });
 
                 if (!metadata.distance && prevPoint) {
                     metadata.distance += this.calculateDistance(prevPoint, { lat, lon });
