@@ -206,7 +206,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const token = ++_mapLoadToken;
         await routeRenderer.loadMapTiles();
         if (token !== _mapLoadToken) return; // stale
-        routeRenderer.render();
+        routeRenderer.render(); // loadMapTiles no longer calls render itself
     }
 
     // --- Page ---
@@ -306,8 +306,7 @@ document.addEventListener('DOMContentLoaded', () => {
     mapOpacitySlider.addEventListener('input', e => {
         const v = parseFloat(e.target.value);
         mapOpacityValue.textContent = `${Math.round(v * 100)}%`;
-        routeRenderer.mapOpacity = v;
-        if (routeRenderer.coordinates.length > 0) routeRenderer.render();
+        routeRenderer.setMapOpacity(v);
     });
 
     // --- Text ---
@@ -355,11 +354,16 @@ document.addEventListener('DOMContentLoaded', () => {
         routeRenderer.showMap = DEFAULTS.showMap;
         routeRenderer.mapOpacity = DEFAULTS.mapOpacity;
         routeRenderer._mapReady = false;
+        routeRenderer._mapCompositeDirty = true;
+        routeRenderer._mapCompositeCache = null;
         routeRenderer.heatmapColors = { ...DEFAULTS.heatmapColors };
         routeRenderer.setColors(DEFAULTS.routeColor, DEFAULTS.backgroundColor);
         routeRenderer.setLineWidth(DEFAULTS.lineWidth);
         routeRenderer.setSmoothing(DEFAULTS.smoothing);
         routeRenderer.setLineStyle(DEFAULTS.lineStyle);
+        routeRenderer.orientation = DEFAULTS.orientation;
+        routeRenderer.printSize = DEFAULTS.printSize;
+        routeRenderer.updateCanvasSize();
 
         // Clear canvas
         const size = routeRenderer.getSize();
@@ -407,6 +411,7 @@ document.addEventListener('DOMContentLoaded', () => {
         mapOpacityValue.textContent = `${Math.round(DEFAULTS.mapOpacity * 100)}%`;
         mapOpacityRow.style.display = '';
         orientationBtn.textContent = 'Portrait';
+        printSizeSelect.value = DEFAULTS.printSize;
     });
 
     // --- Resize ---

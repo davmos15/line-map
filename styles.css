@@ -624,12 +624,26 @@ footer a:hover { color: #333; }
 /* Responsive */
 @media (max-width: 900px) {
     main { flex-direction: column; }
-    .controls-panel { flex: none; width: 100%; max-height: none; }
-    .preview-panel { min-height: 350px; }
-    #routeCanvas { max-height: 60vh; }
+    .controls-panel { flex: none; width: 100%; max-height: none; overflow-y: visible; }
+    .preview-panel { min-height: 300px; order: -1; /* preview on top on mobile */ }
+    #routeCanvas { max-height: 55vh; }
+    header { flex-wrap: wrap; justify-content: center; padding: 0.5rem 1rem; }
+    header .sep, header p { display: none; }
+    .header-actions { margin-left: auto; }
 }
 @media (max-width: 480px) {
     header h1 { font-size: 1rem; }
-    .controls-panel { padding: 0.6rem; flex: 0 0 auto; }
-    .text-style-controls { grid-template-columns: 1fr; }
+    .controls-panel { padding: 0.5rem; }
+    /* Larger touch targets */
+    .preset-dot { width: 40px; height: 40px; }
+    .ctrl-range::-webkit-slider-thumb { width: 18px; height: 18px; }
+    .ctrl-range::-moz-range-thumb { width: 18px; height: 18px; }
+    .toggle { width: 36px; height: 20px; }
+    .toggle-slider::before { height: 16px; width: 16px; }
+    .toggle input:checked + .toggle-slider::before { transform: translateX(16px); }
+    .ctrl-label { font-size: 0.72rem; }
+    .ctrl-val { font-size: 0.68rem; }
+    .btn-primary { padding: 0.55rem; font-size: 0.85rem; }
+    .file-upload-area { padding: 0.6rem 0.5rem; }
+    footer { font-size: 0.6rem; }
 }

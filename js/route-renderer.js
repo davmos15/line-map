@@ -32,10 +32,11 @@ class RouteRenderer {
         this.showElevation = false;
         this.hasElevationData = false;
         this.showMap = true;
-        this.mapOpacity = 0.7; // 0 = hidden, 1 = full strength
+        this.mapOpacity = 0.7;
         this._tileCache = {};
         this._mapReady = false;
-        // Heatmap colors as [r,g,b] arrays
+        this._mapCompositeCache = null; // cached composited map canvas
+        this._mapCompositeDirty = true;
         this.heatmapColors = {
             slow: [0, 0, 255],
             medium: [0, 255, 0],
@@ -65,6 +66,7 @@ class RouteRenderer {
 
     setPrintSize(size) {
         this.printSize = size;
+        this._mapCompositeDirty = true;
         this.updateCanvasSize();
         if (this.coordinates.length > 0) {
             if (this.showMap && this.bounds) this.loadMapTiles();
@@ -74,6 +76,7 @@ class RouteRenderer {
 
     setOrientation(orientation) {
         this.orientation = orientation;
+        this._mapCompositeDirty = true;
         this.updateCanvasSize();
         if (this.coordinates.length > 0) {
             if (this.showMap && this.bounds) this.loadMapTiles();
@@ -94,6 +97,7 @@ class RouteRenderer {
     setColors(routeColor, backgroundColor) {
         this.routeColor = routeColor;
         this.backgroundColor = backgroundColor;
+        this._mapCompositeDirty = true;
         if (this.coordinates.length > 0) this.render();
     }
 
@@ -114,6 +118,12 @@ class RouteRenderer {
 
     setColorMode(mode) {
         this.colorMode = mode;
+        if (this.coordinates.length > 0) this.render();
+    }
+
+    setMapOpacity(value) {
+        this.mapOpacity = value;
+        this._mapCompositeDirty = true;
         if (this.coordinates.length > 0) this.render();
     }
 
@@ -146,7 +156,6 @@ class RouteRenderer {
         if (withTime.length < 2) return;
 
         this.hasTimeData = true;
-        let minSpeed = Infinity, maxSpeed = 0;
 
         for (let i = 1; i < this.coordinates.length; i++) {
             const prev = this.coordinates[i - 1];
@@ -155,11 +164,7 @@ class RouteRenderer {
             if (prev.time && curr.time) {
                 const dt = (curr.time - prev.time) / 1000;
                 if (dt > 0) {
-                    const dist = GPSParser.calculateDistance(prev, curr);
-                    const speed = dist / dt;
-                    this.speeds.push(speed);
-                    if (speed < minSpeed) minSpeed = speed;
-                    if (speed > maxSpeed) maxSpeed = speed;
+                    this.speeds.push(GPSParser.calculateDistance(prev, curr) / dt);
                 } else {
                     this.speeds.push(this.speeds.length > 0 ? this.speeds[this.speeds.length - 1] : 0);
                 }
@@ -177,7 +182,6 @@ class RouteRenderer {
         }
     }
 
-    // Interpolate between two RGB arrays
     _lerpColor(c1, c2, t) {
         return [
             Math.round(c1[0] + (c2[0] - c1[0]) * t),
@@ -232,7 +236,6 @@ class RouteRenderer {
 
     renderRoute(ctx, size) {
         if (!this.bounds || this.coordinates.length === 0) return;
-
         if (this.colorMode === 'speed' && this.hasTimeData) {
             this._renderSpeedRoute(ctx, size);
         } else {
@@ -248,7 +251,6 @@ class RouteRenderer {
         this._applyLineStyle(ctx);
 
         const points = this.coordinates.map(c => this.latLonToCanvas(c.lat, c.lon, size));
-
         ctx.beginPath();
         if (this.smoothing > 0 && points.length > 2) {
             this._drawSmoothedPath(ctx, points);
@@ -264,29 +266,21 @@ class RouteRenderer {
 
     _renderSpeedRoute(ctx, size) {
         const points = this.coordinates.map(c => this.latLonToCanvas(c.lat, c.lon, size));
-
         ctx.lineWidth = this.lineWidth;
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
         this._applyLineStyle(ctx);
 
-        // Draw each segment with a linear gradient from its color to the next
-        // segment's color, creating truly smooth color transitions
         for (let i = 0; i < points.length - 1; i++) {
-            const p1 = points[i];
-            const p2 = points[i + 1];
-
-            // Skip near-zero-length segments (prevent gradient issues and dots)
+            const p1 = points[i], p2 = points[i + 1];
             const dx = p2.x - p1.x, dy = p2.y - p1.y;
             if (dx * dx + dy * dy < 0.01) continue;
 
             const c1 = this.speedToColor(this.speeds[i] || 0);
             const c2 = this.speedToColor(this.speeds[Math.min(i + 1, this.speeds.length - 1)] || 0);
-
             const grad = ctx.createLinearGradient(p1.x, p1.y, p2.x, p2.y);
             grad.addColorStop(0, c1);
             grad.addColorStop(1, c2);
-
             ctx.strokeStyle = grad;
             ctx.beginPath();
 
@@ -296,10 +290,8 @@ class RouteRenderer {
                 const t = this.smoothing;
                 ctx.moveTo(p1.x, p1.y);
                 ctx.bezierCurveTo(
-                    p1.x + (p2.x - p0.x) * t / 6,
-                    p1.y + (p2.y - p0.y) * t / 6,
-                    p2.x - (p3.x - p1.x) * t / 6,
-                    p2.y - (p3.y - p1.y) * t / 6,
+                    p1.x + (p2.x - p0.x) * t / 6, p1.y + (p2.y - p0.y) * t / 6,
+                    p2.x - (p3.x - p1.x) * t / 6, p2.y - (p3.y - p1.y) * t / 6,
                     p2.x, p2.y
                 );
             } else {
@@ -314,25 +306,20 @@ class RouteRenderer {
     _drawSmoothedPath(ctx, points) {
         const t = this.smoothing;
         ctx.moveTo(points[0].x, points[0].y);
-
         for (let i = 0; i < points.length - 1; i++) {
             const p0 = points[Math.max(0, i - 1)];
             const p1 = points[i];
             const p2 = points[i + 1];
             const p3 = points[Math.min(points.length - 1, i + 2)];
             ctx.bezierCurveTo(
-                p1.x + (p2.x - p0.x) * t / 6,
-                p1.y + (p2.y - p0.y) * t / 6,
-                p2.x - (p3.x - p1.x) * t / 6,
-                p2.y - (p3.y - p1.y) * t / 6,
+                p1.x + (p2.x - p0.x) * t / 6, p1.y + (p2.y - p0.y) * t / 6,
+                p2.x - (p3.x - p1.x) * t / 6, p2.y - (p3.y - p1.y) * t / 6,
                 p2.x, p2.y
             );
         }
     }
 
-    // Draw inner border frame and start marker
     renderDecorations(ctx, size) {
-        // Inner border — thin elegant frame
         const margin = 10;
         ctx.strokeStyle = this.colorMode === 'speed' ? 'rgba(120,120,120,0.25)' : this.routeColor;
         ctx.globalAlpha = this.colorMode === 'speed' ? 1 : 0.15;
@@ -341,13 +328,10 @@ class RouteRenderer {
         ctx.strokeRect(margin, margin, size.width - 2 * margin, size.height - 2 * margin);
         ctx.globalAlpha = 1;
 
-        // Start marker — small filled circle
         if (this.showStartMarker && this.bounds && this.coordinates.length > 0) {
             const start = this.latLonToCanvas(this.coordinates[0].lat, this.coordinates[0].lon, size);
-            const markerColor = this.colorMode === 'speed' && this.hasTimeData
-                ? this.speedToColor(this.speeds[0] || 0)
-                : this.routeColor;
-            ctx.fillStyle = markerColor;
+            ctx.fillStyle = this.colorMode === 'speed' && this.hasTimeData
+                ? this.speedToColor(this.speeds[0] || 0) : this.routeColor;
             ctx.beginPath();
             ctx.arc(start.x, start.y, this.lineWidth * 1.8, 0, Math.PI * 2);
             ctx.fill();
@@ -427,11 +411,9 @@ class RouteRenderer {
         const size = this.getSize();
         const zoom = this._calculateZoom();
         const cb = this._getCanvasLatLonBounds(size);
-
         const minT = this._latLonToTile(cb.maxLat, cb.minLon, zoom);
         const maxT = this._latLonToTile(cb.minLat, cb.maxLon, zoom);
 
-        // Pad by 1 tile on each side to cover edges
         const pad = 1;
         const promises = [];
         for (let tx = minT.x - pad; tx <= maxT.x + pad; tx++) {
@@ -442,76 +424,90 @@ class RouteRenderer {
         this._mapMeta = { zoom, minX: minT.x - pad, minY: minT.y - pad, maxX: maxT.x + pad, maxY: maxT.y + pad };
         await Promise.all(promises);
         this._mapReady = true;
-        this.render();
+        this._mapCompositeDirty = true;
+        // Don't call render() here — caller handles it via loadMapVersioned
     }
 
-    renderMapBackground(ctx, size) {
-        if (!this.showMap || !this._mapReady || !this._mapMeta) return;
+    // Build composited map at given scale (cached for preview, fresh for exports)
+    _buildMapComposite(size, scale) {
         const { zoom, minX, minY, maxX, maxY } = this._mapMeta;
         const dark = this._isDarkBackground();
-        const key_suffix = dark ? 'd' : 'l';
+        const ks = dark ? 'd' : 'l';
 
-        // Draw tiles to a temp canvas so we can boost contrast
-        const tmpCanvas = document.createElement('canvas');
-        tmpCanvas.width = size.width * 3;
-        tmpCanvas.height = size.height * 3;
-        const tmp = tmpCanvas.getContext('2d');
-        tmp.scale(3, 3);
+        const c = document.createElement('canvas');
+        c.width = size.width * scale;
+        c.height = size.height * scale;
+        const ctx = c.getContext('2d');
+        ctx.scale(scale, scale);
 
-        // Fill with background first
-        tmp.fillStyle = this.backgroundColor;
-        tmp.fillRect(0, 0, size.width, size.height);
+        ctx.fillStyle = this.backgroundColor;
+        ctx.fillRect(0, 0, size.width, size.height);
 
         // Draw tiles
         for (let tx = minX; tx <= maxX; tx++) {
             for (let ty = minY; ty <= maxY; ty++) {
-                const tile = this._tileCache[`${zoom}/${tx}/${ty}/${key_suffix}`];
+                const tile = this._tileCache[`${zoom}/${tx}/${ty}/${ks}`];
                 if (!tile) continue;
                 const tl = this._tileToLatLon(tx, ty, zoom);
                 const br = this._tileToLatLon(tx + 1, ty + 1, zoom);
                 const p1 = this.latLonToCanvas(tl.lat, tl.lon, size);
                 const p2 = this.latLonToCanvas(br.lat, br.lon, size);
-                tmp.drawImage(tile, p1.x, p1.y, p2.x - p1.x, p2.y - p1.y);
+                ctx.drawImage(tile, p1.x, p1.y, p2.x - p1.x, p2.y - p1.y);
             }
         }
 
-        // At high opacity, overdraw tiles with multiply blend to darken streets
+        // Multiply blend at high opacity
         if (this.mapOpacity > 0.5) {
-            const boost = (this.mapOpacity - 0.5) * 2; // 0 at 50%, 1 at 100%
-            tmp.globalCompositeOperation = 'multiply';
-            tmp.globalAlpha = boost * 0.6;
+            const boost = (this.mapOpacity - 0.5) * 2;
+            ctx.globalCompositeOperation = 'multiply';
+            ctx.globalAlpha = boost * 0.6;
             for (let tx = minX; tx <= maxX; tx++) {
                 for (let ty = minY; ty <= maxY; ty++) {
-                    const tile = this._tileCache[`${zoom}/${tx}/${ty}/${key_suffix}`];
+                    const tile = this._tileCache[`${zoom}/${tx}/${ty}/${ks}`];
                     if (!tile) continue;
                     const tl = this._tileToLatLon(tx, ty, zoom);
                     const br = this._tileToLatLon(tx + 1, ty + 1, zoom);
                     const p1 = this.latLonToCanvas(tl.lat, tl.lon, size);
                     const p2 = this.latLonToCanvas(br.lat, br.lon, size);
-                    tmp.drawImage(tile, p1.x, p1.y, p2.x - p1.x, p2.y - p1.y);
+                    ctx.drawImage(tile, p1.x, p1.y, p2.x - p1.x, p2.y - p1.y);
                 }
             }
-            tmp.globalCompositeOperation = 'source-over';
-            tmp.globalAlpha = 1;
+            ctx.globalCompositeOperation = 'source-over';
+            ctx.globalAlpha = 1;
         }
 
-        // Wash with background color
+        // Wash
         const wash = 1 - this.mapOpacity;
         if (wash > 0.01) {
-            tmp.globalAlpha = wash;
-            tmp.fillStyle = this.backgroundColor;
-            tmp.fillRect(0, 0, size.width, size.height);
-            tmp.globalAlpha = 1;
+            ctx.globalAlpha = wash;
+            ctx.fillStyle = this.backgroundColor;
+            ctx.fillRect(0, 0, size.width, size.height);
+            ctx.globalAlpha = 1;
         }
 
-        // Draw the composited map onto the main canvas
-        ctx.drawImage(tmpCanvas, 0, 0, size.width, size.height);
+        return c;
+    }
+
+    renderMapBackground(ctx, size, exportScale) {
+        if (!this.showMap || !this._mapReady || !this._mapMeta) return;
+
+        if (exportScale) {
+            // For exports: build fresh at export scale
+            const comp = this._buildMapComposite(size, exportScale);
+            ctx.drawImage(comp, 0, 0, size.width, size.height);
+        } else {
+            // For preview: use cached composite
+            if (this._mapCompositeDirty || !this._mapCompositeCache) {
+                this._mapCompositeCache = this._buildMapComposite(size, 3);
+                this._mapCompositeDirty = false;
+            }
+            ctx.drawImage(this._mapCompositeCache, 0, 0, size.width, size.height);
+        }
     }
 
     renderElevation(ctx, size) {
         if (!this.showElevation || !this.hasElevationData) return;
 
-        // Collect elevation values, interpolating gaps
         const elevations = [];
         let lastEle = null;
         for (const c of this.coordinates) {
@@ -520,55 +516,51 @@ class RouteRenderer {
         }
         if (elevations.filter(e => e != null).length < 2) return;
 
-        // Fill leading nulls
         const first = elevations.find(e => e != null);
         for (let i = 0; i < elevations.length; i++) {
             if (elevations[i] == null) elevations[i] = first;
             else break;
         }
 
-        const minEle = Math.min(...elevations);
-        const maxEle = Math.max(...elevations);
+        // Safe min/max without spread (avoids stack overflow on large arrays)
+        let minEle = Infinity, maxEle = -Infinity;
+        for (let i = 0; i < elevations.length; i++) {
+            if (elevations[i] < minEle) minEle = elevations[i];
+            if (elevations[i] > maxEle) maxEle = elevations[i];
+        }
         const eleRange = maxEle - minEle || 1;
 
-        // Draw area at bottom of canvas
         const margin = 12;
-        const chartH = size.height * 0.08; // 8% of page height
+        const chartH = size.height * 0.08;
         const chartBottom = size.height - margin;
-        const chartTop = chartBottom - chartH;
         const chartLeft = margin;
         const chartWidth = size.width - 2 * margin;
+        const n = elevations.length - 1;
 
         ctx.save();
 
-        // Build the elevation path
         ctx.beginPath();
         ctx.moveTo(chartLeft, chartBottom);
-
-        for (let i = 0; i < elevations.length; i++) {
-            const x = chartLeft + (i / (elevations.length - 1)) * chartWidth;
-            const y = chartBottom - ((elevations[i] - minEle) / eleRange) * chartH;
-            if (i === 0) ctx.lineTo(x, y);
-            else ctx.lineTo(x, y);
+        for (let i = 0; i <= n; i++) {
+            ctx.lineTo(
+                chartLeft + (i / n) * chartWidth,
+                chartBottom - ((elevations[i] - minEle) / eleRange) * chartH
+            );
         }
-
         ctx.lineTo(chartLeft + chartWidth, chartBottom);
         ctx.closePath();
 
-        // Fill with route color at low opacity
         ctx.globalAlpha = 0.12;
         ctx.fillStyle = this.colorMode === 'speed' ? '#888' : this.routeColor;
         ctx.fill();
 
-        // Stroke the top edge
         ctx.globalAlpha = 0.25;
         ctx.strokeStyle = this.colorMode === 'speed' ? '#888' : this.routeColor;
         ctx.lineWidth = 0.3;
         ctx.setLineDash([]);
-
         ctx.beginPath();
-        for (let i = 0; i < elevations.length; i++) {
-            const x = chartLeft + (i / (elevations.length - 1)) * chartWidth;
+        for (let i = 0; i <= n; i++) {
+            const x = chartLeft + (i / n) * chartWidth;
             const y = chartBottom - ((elevations[i] - minEle) / eleRange) * chartH;
             if (i === 0) ctx.moveTo(x, y);
             else ctx.lineTo(x, y);

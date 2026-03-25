@@ -3,10 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' https://*.basemaps.cartocdn.com data: blob:; style-src 'self' 'unsafe-inline'; script-src 'self'; font-src 'self'; connect-src 'self' https://*.basemaps.cartocdn.com">
     <title>LineArt Maps — Turn Your GPS Routes Into Wall Art</title>
     <meta name="description" content="Transform your runs, rides, and hikes into beautiful minimalist line art. Upload GPX, TCX, or FIT files and export print-ready PNG, SVG, or PDF.">
     <meta property="og:title" content="LineArt Maps — GPS Routes as Wall Art">
-    <meta property="og:description" content="Turn your runs, rides, and hikes into beautiful wall art. Works offline, no account needed.">
+    <meta property="og:description" content="Turn your runs, rides, and hikes into beautiful wall art. No account needed. Free and open source.">
     <meta property="og:type" content="website">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path d='M15 75 Q30 25 50 55 Q70 85 85 30' fill='none' stroke='%23333' stroke-width='6' stroke-linecap='round'/></svg>">
     <link rel="stylesheet" href="styles.css">
@@ -250,7 +251,7 @@
         </footer>
     </div>
 
-    <script src="lib/jspdf.umd.min.js"></script>
+    <!-- jsPDF lazy-loaded on first PDF export -->
     <script src="js/fit-parser.js"></script>
     <script src="js/gps-parser.js"></script>
     <script src="js/route-renderer.js"></script>

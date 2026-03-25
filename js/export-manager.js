@@ -47,9 +47,6 @@ class ExportManager {
         });
     }
 
-    _drawWatermark(ctx, size) {
-        // No watermark — open source
-    }
 
     async exportRaster(format, size, scale, filename) {
         const exportCanvas = document.createElement('canvas');
@@ -64,7 +61,7 @@ class ExportManager {
         ctx.fillRect(0, 0, size.width, size.height);
 
         // Map background, elevation, decorations, and route
-        this.routeRenderer.renderMapBackground(ctx, size);
+        this.routeRenderer.renderMapBackground(ctx, size, scale);
         this.routeRenderer.renderElevation(ctx, size);
         this.routeRenderer.renderDecorations(ctx, size);
         this.routeRenderer.renderRoute(ctx, size);
@@ -72,8 +69,6 @@ class ExportManager {
         // Draw text elements (converted from pixel-space to mm-space)
         this._drawTextElements(ctx, size);
 
-        // Watermark
-        this._drawWatermark(ctx, size);
 
         // Convert to blob and download
         exportCanvas.toBlob((blob) => {
@@ -291,8 +286,18 @@ class ExportManager {
     }
 
     async exportPDF(size, filename) {
+        // Lazy-load jsPDF on first PDF export
         if (typeof window.jspdf === 'undefined') {
-            alert('PDF export library not loaded. Please try PNG or SVG format.');
+            await new Promise((resolve, reject) => {
+                const s = document.createElement('script');
+                s.src = 'lib/jspdf.umd.min.js';
+                s.onload = resolve;
+                s.onerror = () => reject(new Error('Failed to load PDF library'));
+                document.head.appendChild(s);
+            });
+        }
+        if (typeof window.jspdf === 'undefined') {
+            alert('PDF export library not available.');
             return;
         }
 
@@ -318,7 +323,7 @@ class ExportManager {
         ctx.fillRect(0, 0, size.width, size.height);
 
         // Map background, elevation, decorations, and route at export resolution
-        this.routeRenderer.renderMapBackground(ctx, size);
+        this.routeRenderer.renderMapBackground(ctx, size, scale);
         this.routeRenderer.renderElevation(ctx, size);
         this.routeRenderer.renderDecorations(ctx, size);
         this.routeRenderer.renderRoute(ctx, size);
@@ -326,8 +331,6 @@ class ExportManager {
         // Draw text elements
         this._drawTextElements(ctx, size);
 
-        // Watermark
-        this._drawWatermark(ctx, size);
 
         // Add to PDF
         const imgData = exportCanvas.toDataURL('image/png');

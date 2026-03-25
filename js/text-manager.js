@@ -34,13 +34,6 @@ class TextManager {
         ];
     }
 
-    // Escape HTML to prevent XSS when building control panel
-    static _esc(str) {
-        const d = document.createElement('div');
-        d.textContent = str;
-        return d.innerHTML;
-    }
-
     addTextElement(text = 'New Text', options = {}) {
         const id = `text-${this.nextId++}`;
         const element = {
