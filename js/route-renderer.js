@@ -28,9 +28,9 @@ class RouteRenderer {
         this.speeds = [];
         this.speedRange = { min: 0, max: 1 };
         this.hasTimeData = false;
-        this.showStartMarker = true;
+        this.showStartMarker = false;
         this.showMap = true;
-        this.mapOpacity = 0.35; // 0 = hidden, 1 = full strength
+        this.mapOpacity = 0.7; // 0 = hidden, 1 = full strength
         this._tileCache = {};
         this._mapReady = false;
         // Heatmap colors as [r,g,b] arrays

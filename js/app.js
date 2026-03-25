@@ -132,7 +132,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         if (parts.length > 0) {
             textManager.addTextElement(parts.join('   ·   '), {
-                y: canvasH - 32, fontSize: 11, fontFamily: 'Montserrat', alignment: 'center', color: rc
+                y: canvasH - 42, fontSize: 11, fontFamily: 'Montserrat', alignment: 'center', color: rc
             });
         }
     }
@@ -251,7 +251,15 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // --- Text ---
+    const editTextBtn = $('editTextBtn');
+    const textElementsList = $('textElements');
+    editTextBtn.addEventListener('click', () => {
+        const showing = textElementsList.style.display !== 'none';
+        textElementsList.style.display = showing ? 'none' : '';
+    });
+
     addTextBtn.addEventListener('click', () => {
+        textElementsList.style.display = ''; // show panel when adding
         textManager.addTextElement('Custom Text', {
             y: canvas.getBoundingClientRect().height / 2,
             fontSize: 16, fontFamily: 'Montserrat', alignment: 'center',
@@ -277,13 +285,14 @@ document.addEventListener('DOMContentLoaded', () => {
         routeRenderer.speeds = [];
         routeRenderer.hasTimeData = false;
         routeRenderer.colorMode = 'solid';
-        routeRenderer.showStartMarker = true;
+        routeRenderer.showStartMarker = false;
+        showMarkerToggle.checked = false;
         routeRenderer.showMap = true;
-        routeRenderer.mapOpacity = 0.35;
+        routeRenderer.mapOpacity = 0.7;
         routeRenderer._mapReady = false;
         showMapToggle.checked = true;
-        mapOpacitySlider.value = '0.35';
-        mapOpacityValue.textContent = '35%';
+        mapOpacitySlider.value = '0.7';
+        mapOpacityValue.textContent = '70%';
         mapOpacityRow.style.display = '';
 
         const size = routeRenderer.getSize();
