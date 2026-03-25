@@ -308,6 +308,11 @@ document.addEventListener('DOMContentLoaded', () => {
             const r = canvas.getBoundingClientRect();
             textOverlay.style.width = `${r.width}px`;
             textOverlay.style.height = `${r.height}px`;
+
+            // Calculate effective display scale (CSS may constrain the canvas)
+            const size = routeRenderer.getSize();
+            const cssWidth = r.width;
+            routeRenderer.displayScale = cssWidth / size.width;
         });
     }
     let rt;
