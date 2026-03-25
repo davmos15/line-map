@@ -25,7 +25,11 @@ class GPSParser {
         const coordinates = [];
         const metadata = { name: '', time: null, distance: 0, duration: null };
 
-        const nameElement = xmlDoc.querySelector('name');
+        // Prefer trk > name or metadata > name over any random <name>
+        const nameElement = xmlDoc.querySelector('trk > name') ||
+                            xmlDoc.querySelector('metadata > name') ||
+                            xmlDoc.querySelector('rte > name') ||
+                            xmlDoc.querySelector('name');
         if (nameElement) metadata.name = nameElement.textContent;
 
         const timeElement = xmlDoc.querySelector('metadata > time, gpx > time');

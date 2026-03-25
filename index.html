@@ -20,12 +20,12 @@
             <p>Turn your routes into wall art</p>
             <div class="header-actions">
                 <button id="instructionsBtn" class="header-btn" title="How to use">?</button>
-                <a href="https://buymeacoffee.com/nadavmoskow" target="_blank" rel="noopener" class="header-btn coffee-btn" title="Buy me a coffee">☕</a>
+                <a href="https://buymeacoffee.com/nadavmoskow" target="_blank" rel="noopener noreferrer" class="header-btn coffee-btn" title="Buy me a coffee">☕</a>
             </div>
         </header>
 
         <!-- Instructions Modal -->
-        <div id="instructionsModal" class="modal-overlay" style="display:none">
+        <div id="instructionsModal" class="modal-overlay" style="display:none" role="dialog" aria-modal="true" aria-label="How to use LineArt Maps">
             <div class="modal">
                 <div class="modal-header">
                     <h2>How to Use LineArt Maps</h2>
@@ -77,7 +77,7 @@
             <div class="controls-panel">
                 <!-- Upload -->
                 <section>
-                    <div class="file-upload-area" id="fileUploadArea">
+                    <div class="file-upload-area" id="fileUploadArea" role="button" tabindex="0" aria-label="Upload GPS file">
                         <input type="file" id="fileInput" accept=".gpx,.tcx,.fit" hidden>
                         <div class="upload-prompt">
                             <svg viewBox="0 0 24 24" width="20" height="20"><path d="M9 16h6v-6h4l-7-7-7 7h4v6zm-4 2h14v2H5v-2z" fill="currentColor"/></svg>

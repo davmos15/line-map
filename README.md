@@ -28,6 +28,10 @@ Upload a GPS file from Strava, Garmin, or any fitness app and instantly create a
 | **Apple Watch** | Use HealthFit app to export individual workouts |
 | **Others** | Komoot, AllTrails, Suunto, Coros all offer GPX export |
 
+## Privacy
+
+All GPS processing happens in your browser — your files are never uploaded to a server. When the "City map" background is enabled, map tiles are fetched from [CARTO](https://carto.com/), which means the approximate area of your route and your IP address are sent to their tile servers. You can disable the city map toggle to prevent any network requests.
+
 ## Tech
 
 Pure HTML/CSS/JavaScript — no build system, no npm, no framework. Fonts and jsPDF vendored locally. Map tiles from [CARTO](https://carto.com/) (OpenStreetMap data).

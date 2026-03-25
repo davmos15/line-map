@@ -1,16 +1,42 @@
 document.addEventListener('DOMContentLoaded', () => {
     const $ = id => document.getElementById(id);
 
-    // --- Instructions Modal ---
-    const instructionsBtn = $('instructionsBtn');
+    // --- Defaults (single source of truth for reset) ---
+    const DEFAULTS = {
+        routeColor: '#1B2A4A',
+        backgroundColor: '#F5F0E8',
+        lineWidth: 2.5,
+        smoothing: 0.3,
+        lineStyle: 'solid',
+        showStartMarker: false,
+        showElevation: false,
+        showMap: true,
+        mapOpacity: 0.7,
+        colorMode: 'solid',
+        orientation: 'portrait',
+        printSize: 'a4',
+        heatmapColors: { slow: [0,0,255], medium: [0,255,0], fast: [255,0,0] }
+    };
+
+    // --- Instructions Modal (accessible) ---
     const instructionsModal = $('instructionsModal');
     const closeModal = $('closeModal');
-    instructionsBtn.addEventListener('click', () => instructionsModal.style.display = 'flex');
-    closeModal.addEventListener('click', () => instructionsModal.style.display = 'none');
-    instructionsModal.addEventListener('click', e => {
-        if (e.target === instructionsModal) instructionsModal.style.display = 'none';
+    $('instructionsBtn').addEventListener('click', () => {
+        instructionsModal.style.display = 'flex';
+        instructionsModal.setAttribute('aria-hidden', 'false');
+        closeModal.focus();
+    });
+    function closeInstructions() {
+        instructionsModal.style.display = 'none';
+        instructionsModal.setAttribute('aria-hidden', 'true');
+    }
+    closeModal.addEventListener('click', closeInstructions);
+    instructionsModal.addEventListener('click', e => { if (e.target === instructionsModal) closeInstructions(); });
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Escape' && instructionsModal.style.display !== 'none') closeInstructions();
     });
 
+    // --- DOM refs ---
     const fileUploadArea = $('fileUploadArea');
     const fileInput = $('fileInput');
     const uploadFeedback = $('uploadFeedback');
@@ -50,12 +76,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const textManager = new TextManager(textOverlay);
     const exportManager = new ExportManager(routeRenderer, textManager);
     let currentGPSData = null;
+    let _mapLoadToken = 0; // versioning for async map loads
 
     routeRenderer.setPrintSize('a4');
     syncOverlaySize();
 
-    // --- Upload ---
+    // --- Upload (keyboard accessible via label pattern) ---
     fileUploadArea.addEventListener('click', () => fileInput.click());
+    fileUploadArea.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fileInput.click(); } });
     fileUploadArea.addEventListener('dragover', e => { e.preventDefault(); fileUploadArea.classList.add('drag-over'); });
     fileUploadArea.addEventListener('dragleave', () => fileUploadArea.classList.remove('drag-over'));
     fileUploadArea.addEventListener('drop', e => {
@@ -75,8 +103,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
             routeRenderer.loadCoordinates(result.coordinates);
 
-            // Auto-load map tiles if city map is enabled
-            if (routeRenderer.showMap) routeRenderer.loadMapTiles();
+            // Auto-load map tiles (versioned)
+            if (routeRenderer.showMap) loadMapVersioned();
 
             // Speed heatmap availability
             if (routeRenderer.hasTimeData) {
@@ -96,8 +124,15 @@ document.addEventListener('DOMContentLoaded', () => {
             // Elevation availability
             elevationRow.style.display = routeRenderer.hasElevationData ? '' : 'none';
 
+            // Safe feedback (no innerHTML with user data)
             uploadFeedback.className = 'upload-feedback success';
-            uploadFeedback.innerHTML = `<strong>${file.name}</strong> — ${result.coordinates.length} pts${routeRenderer.hasTimeData ? ' · speed' : ''}`;
+            uploadFeedback.textContent = '';
+            const strong = document.createElement('strong');
+            strong.textContent = file.name;
+            uploadFeedback.appendChild(strong);
+            uploadFeedback.appendChild(document.createTextNode(
+                ` — ${result.coordinates.length} pts${routeRenderer.hasTimeData ? ' · speed' : ''}`
+            ));
 
             fileUploadArea.classList.add('file-loaded');
             const prompt = fileUploadArea.querySelector('.upload-prompt span');
@@ -114,20 +149,23 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // Text positions in mm (not pixels) so exports are viewport-independent
     function buildDefaultText(result) {
         textManager.clearAll();
         const rc = routeRenderer.routeColor;
-        const canvasH = canvas.getBoundingClientRect().height;
+        const size = routeRenderer.getSize();
+        // Store y in display pixels = mm * displayScale
+        const ds = routeRenderer.displayScale;
 
         if (result.metadata.name) {
             textManager.addTextElement(result.metadata.name.toUpperCase(), {
-                y: 36, fontSize: 22, fontFamily: 'Playfair Display', alignment: 'center', color: rc
+                y: 18 * ds, fontSize: 11 * ds, fontFamily: 'Playfair Display', alignment: 'center', color: rc
             });
         }
         if (result.metadata.time) {
             const opts = { year: 'numeric', month: 'long', day: 'numeric' };
             textManager.addTextElement(result.metadata.time.toLocaleDateString(undefined, opts), {
-                y: 62, fontSize: 11, fontFamily: 'Raleway', alignment: 'center', color: rc
+                y: 31 * ds, fontSize: 5.5 * ds, fontFamily: 'Raleway', alignment: 'center', color: rc
             });
         }
         const parts = [];
@@ -148,12 +186,11 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         if (parts.length > 0) {
             textManager.addTextElement(parts.join('   ·   '), {
-                y: canvasH - 42, fontSize: 11, fontFamily: 'Montserrat', alignment: 'center', color: rc
+                y: (size.height - 21) * ds, fontSize: 5.5 * ds, fontFamily: 'Montserrat', alignment: 'center', color: rc
             });
         }
     }
 
-    // Update all text element colors to match the route color
     function syncTextColors(color) {
         textManager.getTextElements().forEach(el => {
             textManager.updateTextElement(el.id, { color });
@@ -162,6 +199,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function showLoading(show) {
         if (loadingOverlay) loadingOverlay.style.display = show ? 'flex' : 'none';
+    }
+
+    // Versioned map tile loading — prevents stale renders from old requests
+    async function loadMapVersioned() {
+        const token = ++_mapLoadToken;
+        await routeRenderer.loadMapTiles();
+        if (token !== _mapLoadToken) return; // stale
+        routeRenderer.render();
     }
 
     // --- Page ---
@@ -185,7 +230,7 @@ document.addEventListener('DOMContentLoaded', () => {
     backgroundColorInput.addEventListener('change', e => {
         routeRenderer.setColors(routeColorInput.value, e.target.value);
         backgroundColor2Input.value = e.target.value;
-        if (routeRenderer.showMap && routeRenderer.bounds) routeRenderer.loadMapTiles();
+        if (routeRenderer.showMap && routeRenderer.bounds) loadMapVersioned();
     });
     backgroundColor2Input.addEventListener('change', e => {
         routeRenderer.backgroundColor = e.target.value;
@@ -209,11 +254,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Presets ---
     document.querySelectorAll('.preset-dot').forEach(btn => {
         btn.addEventListener('click', () => {
-            // Activate visual state
             document.querySelectorAll('.preset-dot').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
 
-            // Switch to solid mode
             document.querySelector('input[name="colorMode"][value="solid"]').checked = true;
             routeRenderer.setColorMode('solid');
             solidColorControls.style.display = '';
@@ -226,10 +269,7 @@ document.addEventListener('DOMContentLoaded', () => {
             backgroundColor2Input.value = bg;
             routeRenderer.setColors(rc, bg);
 
-            // Reload map tiles if map is showing (light/dark may have changed)
-            if (routeRenderer.showMap && routeRenderer.bounds) routeRenderer.loadMapTiles();
-
-            // Sync text colors to match theme
+            if (routeRenderer.showMap && routeRenderer.bounds) loadMapVersioned();
             syncTextColors(rc);
         });
     });
@@ -257,7 +297,7 @@ document.addEventListener('DOMContentLoaded', () => {
         routeRenderer.showMap = e.target.checked;
         mapOpacityRow.style.display = e.target.checked ? '' : 'none';
         if (e.target.checked && routeRenderer.bounds) {
-            routeRenderer.loadMapTiles();
+            loadMapVersioned();
         } else {
             routeRenderer._mapReady = false;
             if (routeRenderer.coordinates.length > 0) routeRenderer.render();
@@ -272,77 +312,101 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Text ---
     addTextBtn.addEventListener('click', () => {
+        const ds = routeRenderer.displayScale;
+        const size = routeRenderer.getSize();
         textManager.addTextElement('Custom Text', {
-            y: canvas.getBoundingClientRect().height / 2,
-            fontSize: 16, fontFamily: 'Montserrat', alignment: 'center',
+            y: (size.height / 2) * ds,
+            fontSize: 8 * ds, fontFamily: 'Montserrat', alignment: 'center',
             color: routeRenderer.routeColor
         });
     });
 
-    // --- Export ---
+    // --- Export (wait for map if loading) ---
     exportBtn.addEventListener('click', async () => {
         const name = currentGPSData?.metadata?.name || 'lineart-map';
         try {
+            // If map is enabled but not ready, wait briefly
+            if (routeRenderer.showMap && !routeRenderer._mapReady && routeRenderer.bounds) {
+                exportBtn.textContent = 'Loading map…';
+                await routeRenderer.loadMapTiles();
+            }
             await exportManager.exportImage(exportFormat.value, name.replace(/[^a-z0-9]/gi, '_'));
         } catch (e) {
             alert('Export failed. Try a different format.');
+        } finally {
+            exportBtn.textContent = 'Download';
         }
     });
 
-    // --- Reset ---
+    // --- Reset (centralized through DEFAULTS) ---
     resetBtn.addEventListener('click', () => {
         currentGPSData = null;
+        _mapLoadToken++;
+
+        // Reset renderer state
         routeRenderer.coordinates = [];
         routeRenderer.bounds = null;
         routeRenderer.speeds = [];
         routeRenderer.hasTimeData = false;
-        routeRenderer.colorMode = 'solid';
-        routeRenderer.showStartMarker = false;
-        routeRenderer.showElevation = false;
         routeRenderer.hasElevationData = false;
-        showMarkerToggle.checked = false;
-        showElevationToggle.checked = false;
-        elevationRow.style.display = 'none';
-        routeRenderer.showMap = true;
-        routeRenderer.mapOpacity = 0.7;
+        routeRenderer.colorMode = DEFAULTS.colorMode;
+        routeRenderer.showStartMarker = DEFAULTS.showStartMarker;
+        routeRenderer.showElevation = DEFAULTS.showElevation;
+        routeRenderer.showMap = DEFAULTS.showMap;
+        routeRenderer.mapOpacity = DEFAULTS.mapOpacity;
         routeRenderer._mapReady = false;
-        showMapToggle.checked = true;
-        mapOpacitySlider.value = '0.7';
-        mapOpacityValue.textContent = '70%';
-        mapOpacityRow.style.display = '';
+        routeRenderer.heatmapColors = { ...DEFAULTS.heatmapColors };
+        routeRenderer.setColors(DEFAULTS.routeColor, DEFAULTS.backgroundColor);
+        routeRenderer.setLineWidth(DEFAULTS.lineWidth);
+        routeRenderer.setSmoothing(DEFAULTS.smoothing);
+        routeRenderer.setLineStyle(DEFAULTS.lineStyle);
 
+        // Clear canvas
         const size = routeRenderer.getSize();
         const ctx = canvas.getContext('2d');
         ctx.setTransform(1,0,0,1,0,0);
         ctx.scale(routeRenderer.canvasScale, routeRenderer.canvasScale);
-        ctx.fillStyle = '#F5F0E8';
+        ctx.fillStyle = DEFAULTS.backgroundColor;
         ctx.fillRect(0, 0, size.width, size.height);
 
         textManager.clearAll();
         exportBtn.disabled = true;
+
+        // Reset upload area
         fileUploadArea.classList.remove('file-loaded');
         const prompt = fileUploadArea.querySelector('.upload-prompt span');
-        if (prompt) prompt.innerHTML = 'Drop GPS file or <u>browse</u>';
+        if (prompt) prompt.textContent = 'Drop GPS file or browse';
         uploadFeedback.className = 'upload-feedback';
+        uploadFeedback.textContent = '';
         fileInput.value = '';
 
+        // Reset UI controls to match DEFAULTS
         document.querySelector('input[name="colorMode"][value="solid"]').checked = true;
         solidColorControls.style.display = '';
         speedInfo.style.display = 'none';
         document.querySelectorAll('.preset-dot').forEach(b => b.classList.remove('active'));
+        customColorRow.style.display = 'none';
+        customColorBtn.textContent = 'Custom';
 
-        routeColorInput.value = '#1B2A4A';
-        backgroundColorInput.value = '#F5F0E8';
-        backgroundColor2Input.value = '#F5F0E8';
+        routeColorInput.value = DEFAULTS.routeColor;
+        backgroundColorInput.value = DEFAULTS.backgroundColor;
+        backgroundColor2Input.value = DEFAULTS.backgroundColor;
         heatSlowInput.value = '#0000FF';
         heatMediumInput.value = '#00FF00';
         heatFastInput.value = '#FF0000';
-        routeRenderer.heatmapColors = { slow:[0,0,255], medium:[0,255,0], fast:[255,0,0] };
-        routeRenderer.setColors('#1B2A4A', '#F5F0E8');
-        lineWidthSlider.value = '2.5'; lineWidthValue.textContent = '2.5';
-        lineStyleSelect.value = 'solid';
-        smoothingSlider.value = '0.3'; smoothingValue.textContent = '30%';
-        showMarkerToggle.checked = true;
+        lineWidthSlider.value = String(DEFAULTS.lineWidth);
+        lineWidthValue.textContent = String(DEFAULTS.lineWidth);
+        lineStyleSelect.value = DEFAULTS.lineStyle;
+        smoothingSlider.value = String(DEFAULTS.smoothing);
+        smoothingValue.textContent = `${Math.round(DEFAULTS.smoothing * 100)}%`;
+        showMarkerToggle.checked = DEFAULTS.showStartMarker;
+        showElevationToggle.checked = DEFAULTS.showElevation;
+        elevationRow.style.display = 'none';
+        showMapToggle.checked = DEFAULTS.showMap;
+        mapOpacitySlider.value = String(DEFAULTS.mapOpacity);
+        mapOpacityValue.textContent = `${Math.round(DEFAULTS.mapOpacity * 100)}%`;
+        mapOpacityRow.style.display = '';
+        orientationBtn.textContent = 'Portrait';
     });
 
     // --- Resize ---
@@ -351,11 +415,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const r = canvas.getBoundingClientRect();
             textOverlay.style.width = `${r.width}px`;
             textOverlay.style.height = `${r.height}px`;
-
-            // Calculate effective display scale (CSS may constrain the canvas)
             const size = routeRenderer.getSize();
-            const cssWidth = r.width;
-            routeRenderer.displayScale = cssWidth / size.width;
+            routeRenderer.displayScale = r.width / size.width;
         });
     }
     let rt;

@@ -317,8 +317,9 @@ class ExportManager {
         ctx.fillStyle = this.routeRenderer.backgroundColor;
         ctx.fillRect(0, 0, size.width, size.height);
 
-        // Map background, decorations, and route at export resolution
+        // Map background, elevation, decorations, and route at export resolution
         this.routeRenderer.renderMapBackground(ctx, size);
+        this.routeRenderer.renderElevation(ctx, size);
         this.routeRenderer.renderDecorations(ctx, size);
         this.routeRenderer.renderRoute(ctx, size);
 
