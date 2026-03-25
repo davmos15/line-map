@@ -173,6 +173,15 @@ document.addEventListener('DOMContentLoaded', () => {
     heatMediumInput.addEventListener('change', e => routeRenderer.setHeatmapColor('medium', e.target.value));
     heatFastInput.addEventListener('change', e => routeRenderer.setHeatmapColor('fast', e.target.value));
 
+    // --- Custom color toggle ---
+    const customColorBtn = $('customColorBtn');
+    const customColorRow = $('customColorRow');
+    customColorBtn.addEventListener('click', () => {
+        const showing = customColorRow.style.display !== 'none';
+        customColorRow.style.display = showing ? 'none' : 'flex';
+        customColorBtn.textContent = showing ? 'Custom' : 'Hide';
+    });
+
     // --- Presets ---
     document.querySelectorAll('.preset-dot').forEach(btn => {
         btn.addEventListener('click', () => {

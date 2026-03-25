@@ -62,19 +62,23 @@
                     </div>
 
                     <div id="solidColorControls">
-                        <div class="preset-grid">
-                            <button class="preset-dot" data-route="#1B2A4A" data-bg="#F5F0E8" title="Navy on Cream"><span style="background:linear-gradient(135deg,#F5F0E8 50%,#1B2A4A 50%)"></span></button>
-                            <button class="preset-dot" data-route="#000000" data-bg="#FFFFFF" title="Black on White"><span style="background:linear-gradient(135deg,#FFFFFF 50%,#000000 50%)"></span></button>
-                            <button class="preset-dot" data-route="#FFFFFF" data-bg="#000000" title="White on Black"><span style="background:linear-gradient(135deg,#000000 50%,#FFFFFF 50%)"></span></button>
-                            <button class="preset-dot" data-route="#C9A84C" data-bg="#1A1A1A" title="Gold on Black"><span style="background:linear-gradient(135deg,#1A1A1A 50%,#C9A84C 50%)"></span></button>
-                            <button class="preset-dot" data-route="#2D5016" data-bg="#FFFFFF" title="Forest on White"><span style="background:linear-gradient(135deg,#FFFFFF 50%,#2D5016 50%)"></span></button>
-                            <button class="preset-dot" data-route="#E8715A" data-bg="#2C2C2C" title="Coral on Dark"><span style="background:linear-gradient(135deg,#2C2C2C 50%,#E8715A 50%)"></span></button>
-                            <button class="preset-dot" data-route="#4ECDC4" data-bg="#1A535C" title="Teal on Dark"><span style="background:linear-gradient(135deg,#1A535C 50%,#4ECDC4 50%)"></span></button>
-                            <button class="preset-dot" data-route="#8B5E3C" data-bg="#FDF6EC" title="Espresso on Linen"><span style="background:linear-gradient(135deg,#FDF6EC 50%,#8B5E3C 50%)"></span></button>
-                            <button class="preset-dot" data-route="#E6E6E6" data-bg="#1C1C1C" title="Silver on Charcoal"><span style="background:linear-gradient(135deg,#1C1C1C 50%,#E6E6E6 50%)"></span></button>
-                            <button class="preset-dot" data-route="#FF6B6B" data-bg="#F7F7F7" title="Red on Light"><span style="background:linear-gradient(135deg,#F7F7F7 50%,#FF6B6B 50%)"></span></button>
+                        <div class="row" style="align-items:center;margin-bottom:0.4rem">
+                            <span class="ctrl-label" style="width:auto">Presets</span>
+                            <button id="customColorBtn" class="btn-sm" style="margin-left:auto">Custom</button>
                         </div>
-                        <div class="row" style="margin-top:0.5rem">
+                        <div class="preset-grid">
+                            <button class="preset-dot active" data-route="#1B2A4A" data-bg="#F5F0E8" title="Navy on Cream"><span style="background:#F5F0E8"><svg viewBox="0 0 24 24"><path d="M3 17 Q7 5 12 13 Q17 21 21 8" fill="none" stroke="#1B2A4A" stroke-width="2.5" stroke-linecap="round"/></svg></span></button>
+                            <button class="preset-dot" data-route="#000000" data-bg="#FFFFFF" title="Black on White"><span style="background:#FFFFFF"><svg viewBox="0 0 24 24"><path d="M3 17 Q7 5 12 13 Q17 21 21 8" fill="none" stroke="#000000" stroke-width="2.5" stroke-linecap="round"/></svg></span></button>
+                            <button class="preset-dot" data-route="#FFFFFF" data-bg="#000000" title="White on Black"><span style="background:#000000"><svg viewBox="0 0 24 24"><path d="M3 17 Q7 5 12 13 Q17 21 21 8" fill="none" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round"/></svg></span></button>
+                            <button class="preset-dot" data-route="#C9A84C" data-bg="#1A1A1A" title="Gold on Black"><span style="background:#1A1A1A"><svg viewBox="0 0 24 24"><path d="M3 17 Q7 5 12 13 Q17 21 21 8" fill="none" stroke="#C9A84C" stroke-width="2.5" stroke-linecap="round"/></svg></span></button>
+                            <button class="preset-dot" data-route="#2D5016" data-bg="#FFFFFF" title="Forest on White"><span style="background:#FFFFFF"><svg viewBox="0 0 24 24"><path d="M3 17 Q7 5 12 13 Q17 21 21 8" fill="none" stroke="#2D5016" stroke-width="2.5" stroke-linecap="round"/></svg></span></button>
+                            <button class="preset-dot" data-route="#E8715A" data-bg="#2C2C2C" title="Coral on Dark"><span style="background:#2C2C2C"><svg viewBox="0 0 24 24"><path d="M3 17 Q7 5 12 13 Q17 21 21 8" fill="none" stroke="#E8715A" stroke-width="2.5" stroke-linecap="round"/></svg></span></button>
+                            <button class="preset-dot" data-route="#4ECDC4" data-bg="#1A535C" title="Teal on Dark"><span style="background:#1A535C"><svg viewBox="0 0 24 24"><path d="M3 17 Q7 5 12 13 Q17 21 21 8" fill="none" stroke="#4ECDC4" stroke-width="2.5" stroke-linecap="round"/></svg></span></button>
+                            <button class="preset-dot" data-route="#8B5E3C" data-bg="#FDF6EC" title="Espresso on Linen"><span style="background:#FDF6EC"><svg viewBox="0 0 24 24"><path d="M3 17 Q7 5 12 13 Q17 21 21 8" fill="none" stroke="#8B5E3C" stroke-width="2.5" stroke-linecap="round"/></svg></span></button>
+                            <button class="preset-dot" data-route="#E6E6E6" data-bg="#1C1C1C" title="Silver on Charcoal"><span style="background:#1C1C1C"><svg viewBox="0 0 24 24"><path d="M3 17 Q7 5 12 13 Q17 21 21 8" fill="none" stroke="#E6E6E6" stroke-width="2.5" stroke-linecap="round"/></svg></span></button>
+                            <button class="preset-dot" data-route="#FF6B6B" data-bg="#F7F7F7" title="Red on Light"><span style="background:#F7F7F7"><svg viewBox="0 0 24 24"><path d="M3 17 Q7 5 12 13 Q17 21 21 8" fill="none" stroke="#FF6B6B" stroke-width="2.5" stroke-linecap="round"/></svg></span></button>
+                        </div>
+                        <div id="customColorRow" class="row" style="margin-top:0.5rem;display:none">
                             <div class="color-pair">
                                 <label>Line</label>
                                 <input type="color" id="routeColor" value="#1B2A4A">

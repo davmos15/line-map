@@ -7,13 +7,19 @@ class TextManager {
 
     static get FONTS() {
         return [
-            { value: 'Arial', label: 'Arial' },
+            { value: 'Playfair Display', label: 'Playfair Display' },
+            { value: 'Bebas Neue', label: 'Bebas Neue' },
             { value: 'Montserrat', label: 'Montserrat' },
             { value: 'Raleway', label: 'Raleway' },
-            { value: 'Playfair Display', label: 'Playfair Display' },
-            { value: 'Georgia', label: 'Georgia' },
-            { value: 'Times New Roman', label: 'Times New Roman' },
+            { value: 'Oswald', label: 'Oswald' },
+            { value: 'Josefin Sans', label: 'Josefin Sans' },
+            { value: 'Lora', label: 'Lora' },
+            { value: 'Cormorant Garamond', label: 'Cormorant Garamond' },
+            { value: 'Abril Fatface', label: 'Abril Fatface' },
             { value: 'Dancing Script', label: 'Dancing Script' },
+            { value: 'Georgia', label: 'Georgia' },
+            { value: 'Arial', label: 'Arial' },
+            { value: 'Times New Roman', label: 'Times New Roman' },
             { value: 'Courier New', label: 'Courier New' }
         ];
     }
