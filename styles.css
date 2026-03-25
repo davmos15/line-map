@@ -422,6 +422,40 @@ section { margin-bottom: 0; }
 }
 .btn-ghost:hover { color: #c0392b; }
 
+/* Support BMC link */
+.support-section { text-align: center; }
+.bmc-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.4rem 0.8rem;
+    border-radius: 6px;
+    background: #FFDD00;
+    color: #1a1a1a;
+    font-size: 0.72rem;
+    font-weight: 600;
+    font-family: inherit;
+    text-decoration: none;
+    transition: all 0.15s;
+}
+.bmc-link:hover { background: #f5d400; transform: scale(1.03); }
+.bmc-icon { font-size: 0.9rem; }
+
+/* Footer */
+footer {
+    text-align: center;
+    padding: 0.6rem 1rem;
+    font-size: 0.68rem;
+    color: #aaa;
+    font-family: 'Montserrat', sans-serif;
+}
+footer a {
+    color: #888;
+    text-decoration: none;
+    font-weight: 600;
+}
+footer a:hover { color: #333; }
+
 /* Text elements */
 .text-elements-list {
     margin-top: 0.35rem;
